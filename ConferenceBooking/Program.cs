@@ -1,4 +1,4 @@
-﻿namespace ConferenceBooking
+﻿namespace ConferenceBooking.Presentation
 {
     internal class Program
     {
