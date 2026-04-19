@@ -1,0 +1,84 @@
+﻿using ConferenceBooking.Application.Interfaces;
+using ConferenceBooking.Domain.Entities;
+using ConferenceBooking.Domain.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Text;
+
+namespace ConferenceBooking.Application.Services
+{
+    public class ConferenceRoomService(IConferenceRoomRepository roomRepo, IBookingRepository bookingRepo) : IConferenceRoomService
+    {
+        public async Task<List<ConferenceRoom>> GetAllRoomsAsync()
+            => await roomRepo.GetAllAsync();
+        public async Task<ConferenceRoom?> GetRoomByIdAsync(int id)
+            => await roomRepo.GetByIdAsync(id);
+        public async Task<IEnumerable<ConferenceRoom>> FindRoomsAsync(Expression<Func<ConferenceRoom, bool>> condition)
+            => await roomRepo.FindAsync(condition);
+
+        public async Task<ServiceResult> CreateRoomAsync(ConferenceRoom room)
+        {
+            var allRooms = await GetAllRoomsAsync();
+            var errors = CheckProperties(room, allRooms);
+
+            if (errors.Any())
+                return ServiceResult.Fail("Validation failed.", errors);
+
+            await roomRepo.AddAsync(room);
+            return ServiceResult.Ok("Conference room was created successfully");
+        }
+
+        public async Task<ServiceResult> UpdateRoomAsync(ConferenceRoom room)
+        {
+            ConferenceRoom? existing = await GetRoomByIdAsync(room.Id);
+            if (existing is null)
+                return ServiceResult.Fail("Conference room was not found.");
+
+            var allRooms = (await GetAllRoomsAsync())
+                .Where(r => r.Id != room.Id)
+                .ToList();
+
+            var errors = CheckProperties(room, allRooms);
+
+            if (errors.Any())
+                return ServiceResult.Fail("Validation failed.", errors);
+
+            await roomRepo.UpdateAsync(room);
+            return ServiceResult.Ok("Conference room was updated successfully");
+        }
+
+        public async Task<ServiceResult> DeleteRoomAsync(int roomId)
+        {
+            ConferenceRoom? room = await GetRoomByIdAsync(roomId);
+            if (room is null)
+                return ServiceResult.Fail("Room was not found");
+
+            var bookings = await bookingRepo.FindAsync(b => b.ConferenceRoomId == roomId);
+            if (bookings.Any())
+                return ServiceResult.Fail($"{room.Number} cannot be deleted because it has existing bookings.");
+
+            await roomRepo.RemoveAsync(room);
+            return ServiceResult.Ok($"Room was deleted successfully");
+        }
+
+        private static Dictionary<string, string> CheckProperties(ConferenceRoom room, List<ConferenceRoom> allRooms)
+        {
+            var errors = new Dictionary<string, string>();
+
+            var nameError = ValidationHelper.ValidateName(room.Number, allRooms, c => c.Number);
+            if (nameError is not null)
+                errors.Add("Number", nameError);
+
+            var capacityError = ValidationHelper.ValidateCapacity(room.Capacity);
+            if(capacityError is not null)
+                errors.Add("Capacity", capacityError);
+
+            var priceError = ValidationHelper.ValidatePrice(room.PricePerHour);
+            if (priceError is not null)
+                errors.Add("Price per hour", priceError);
+
+            return errors;
+        }
+    }
+}
