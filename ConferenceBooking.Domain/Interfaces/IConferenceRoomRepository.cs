@@ -7,6 +7,6 @@ namespace ConferenceBooking.Domain.Interfaces
 {
     public interface IConferenceRoomRepository : IRepository<ConferenceRoom>
     {
-        Task<List<ConferenceRoom>> GetRoomsWithFeaturesAsync();
+        Task<List<ConferenceRoom>> GetAllRoomsWithFeaturesAsync();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ConferenceBooking.Domain.Entities;
+using ConferenceBooking.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;

@@ -6,19 +6,65 @@ namespace ConferenceBooking.Application
 {
     public static class ValidationHelper
     {
-        internal static string? ValidateName<T>(string? name, List<T> existing, Func<T, string> selector)
+        internal static string? ValidateUniqueName<T>(string? name, string property, List<T> existing, Func<T, string> selector)
         {
             if (string.IsNullOrWhiteSpace(name))
-                return "Name is missing";
+                return $"{property} is required";
 
             if (name.Length < 2)
-                return "Name must be at least 2 characters long.";
+                return $"{property} must be at least 2 characters long.";
 
             if (name.Length > 64)
-                return "Name must be under 64 characters long.";
+                return $"{property} must be under 64 characters long.";
 
-            if (existing.Any(x => selector(x).ToLower() == name.ToLower()))
-                return "Name already exists.";
+            if (existing.Any(x => selector(x).Equals(name, StringComparison.CurrentCultureIgnoreCase)))
+                return $"{property} already exists.";
+
+            return null;
+        }
+
+        internal static string? ValidateName(string? name, string property)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return $"{property} is required";
+
+            if (name.Length < 2)
+                return $"{property} must be at least 2 characters long.";
+
+            if (name.Length > 64)
+                return $"{property} must be under 64 characters long.";
+
+            return null;
+        }
+
+        internal static string? ValidateEmail (string? email)
+        {
+            if (email!.Count(c => c == '@') != 1 || !email!.Contains('.') ||
+                email.IndexOf('@') < 2 || email.IndexOf('@') >= email.Length - 1)
+                return "Email is invalid.";
+
+            return null;
+        }
+
+        internal static string? ValidatePassWord(string? password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return "Password is required";
+
+            if (password.Length < 6)
+                return "Password must be at least 6 characters long.";
+
+            if (password.Length > 128)
+                return "Password is too long.";
+
+            if (!password.Any(char.IsLetter))
+                return "Password must contain at least one letter.";
+
+            if (!password.Any(char.IsDigit))
+                return "Password must contain at least one number.";
+
+            if (!password.Any(c => !char.IsLetterOrDigit(c)))
+                return "Password must contain at least one special character.";
 
             return null;
         }

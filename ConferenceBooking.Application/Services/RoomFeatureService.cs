@@ -23,11 +23,11 @@ namespace ConferenceBooking.Application.Services
             var errors = new Dictionary<string, string>();
             var allFeatures = await GetAllFeaturesAsync();
 
-            var nameError = ValidationHelper.ValidateName(feature.Name, allFeatures, f => f.Name);
+            var nameError = ValidationHelper.ValidateUniqueName(feature.Name, "Name", allFeatures, f => f.Name);
             if (nameError is not null)
                 errors.Add("Room feature", nameError);
 
-            if (errors.Any())
+            if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
             await featureRepo.AddAsync(feature);
@@ -47,11 +47,11 @@ namespace ConferenceBooking.Application.Services
 
             var errors = new Dictionary<string, string>();
 
-            var nameError = ValidationHelper.ValidateName(feature.Name, allFeatures, f => f.Name);
+            var nameError = ValidationHelper.ValidateUniqueName(feature.Name, "Name", allFeatures, f => f.Name);
             if (nameError is not null)
                 errors.Add("Room feature", nameError);
 
-            if (errors.Any())
+            if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
             await featureRepo.UpdateAsync(feature);
@@ -64,7 +64,7 @@ namespace ConferenceBooking.Application.Services
             if (feature is null)
                 return ServiceResult.Fail("Room feature was not found.");
 
-            var rooms = await roomRepo.GetRoomsWithFeaturesAsync();
+            var rooms = await roomRepo.GetAllRoomsWithFeaturesAsync();
             var hasLinks = rooms.Any(r => r.RoomFeatures.Any(f => f.Id == id));
 
             if (hasLinks)

@@ -8,7 +8,7 @@ namespace ConferenceBooking.Application.Interfaces
 {
     public interface IRoomFeatureService
     {
-        Task<List<ConferenceRoom>> GetAllFeaturesAsync();
+        Task<List<RoomFeature>> GetAllFeaturesAsync();
         Task<RoomFeature?> GetFeatureByIdAsync(int id);
         Task<IEnumerable<RoomFeature>> FindFeaturesAsync(Expression<Func<RoomFeature, bool>> condition);
         Task<ServiceResult> CreateFeatureAsync(RoomFeature feature);

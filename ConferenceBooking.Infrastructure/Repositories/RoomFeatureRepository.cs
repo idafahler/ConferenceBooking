@@ -6,7 +6,7 @@ using ConferenceBooking.Domain.Interfaces;
 
 namespace ConferenceBooking.Infrastructure.Repositories
 {
-    internal class RoomFeatureRepository(ConferenceBookingContext context) : Repository<RoomFeature>(context), IRoomFeatureRepository
+    public class RoomFeatureRepository(ConferenceBookingContext context) : Repository<RoomFeature>(context), IRoomFeatureRepository
     {
     }
 }

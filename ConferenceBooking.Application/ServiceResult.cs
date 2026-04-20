@@ -23,7 +23,7 @@ namespace ConferenceBooking.Application
         public static ServiceResult<T> Ok(T data, string message = "")
             => new() { Success = true, Data = data, Message = message };
 
-        public new static ServiceResult<T> Fail(string message, Dictionary<string, string>? errors = null)
+        public new static ServiceResult<T> Fail(string message)
             => new() { Success = false, Message = message };
     }
 }

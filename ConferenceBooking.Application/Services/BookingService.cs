@@ -21,7 +21,7 @@ namespace ConferenceBooking.Application.Services
         {
             var errors = CheckProperties(booking);
 
-            if (errors.Any())
+            if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
             await repo.AddAsync(booking);
@@ -36,7 +36,7 @@ namespace ConferenceBooking.Application.Services
 
             var errors = CheckProperties(booking);
 
-            if (errors.Any())
+            if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
             await repo.UpdateAsync(booking);

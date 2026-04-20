@@ -66,7 +66,7 @@ namespace ConferenceBooking.Application.Services
         {
             var errors = new Dictionary<string, string>();
 
-            var nameError = ValidationHelper.ValidateName(room.Number, allRooms, c => c.Number);
+            var nameError = ValidationHelper.ValidateUniqueName(room.Number,"Name" ,allRooms, c => c.Number);
             if (nameError is not null)
                 errors.Add("Number", nameError);
 
