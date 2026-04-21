@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ConferenceBooking.Application.Interfaces
+namespace ConferenceBooking.Application.ServiceInterfaces
 {
     public interface IUserService
     {
@@ -14,6 +14,7 @@ namespace ConferenceBooking.Application.Interfaces
         Task<IEnumerable<User>> FindUsersAsync(Expression<Func<User, bool>> condition);
         Task<ServiceResult> CreateUserAsync(UserDetails userDetails);
         Task<ServiceResult> UpdateUserAsync(User user);
+        Task<ServiceResult> ChangePasswordAsync(User user, string newPassword);
         Task<ServiceResult> DeleteUserAsync(int id);
         Task<ServiceResult<User>> AuthenticateUserAsync(string username, string password);
         Task<User?> GetByUsernameAsync(string username);

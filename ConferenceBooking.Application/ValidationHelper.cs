@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ConferenceBooking.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -34,11 +35,17 @@ namespace ConferenceBooking.Application
             if (name.Length > 64)
                 return $"{property} must be under 64 characters long.";
 
+            if (name.All(char.IsDigit))
+                return $"{property} cannot be only digits.";
+
             return null;
         }
 
         internal static string? ValidateEmail (string? email)
         {
+            if (string.IsNullOrWhiteSpace(email))
+                return "Email is required.";
+
             if (email!.Count(c => c == '@') != 1 || !email!.Contains('.') ||
                 email.IndexOf('@') < 2 || email.IndexOf('@') >= email.Length - 1)
                 return "Email is invalid.";
@@ -90,6 +97,19 @@ namespace ConferenceBooking.Application
             return null;
         }
 
+        internal static string? ValidateNoBookingConflict(DateTime startTime, DateTime endTime, int roomId, 
+            List<Booking> existingBookings, int? excludeBookingId = null)
+        {
+            var conflict = existingBookings
+                .Where(b => b.ConferenceRoomId == roomId)
+                .Where(b => excludeBookingId == null || b.Id != excludeBookingId)
+                .Any(b => b.StartTime < endTime && b.EndTime > startTime);
+            if(conflict)
+                return "The room is already booked during this time.";
+
+            return null;
+        }
+
         internal static string? ValidateCapacity(int capacity)
         {
             if (capacity < 0)
@@ -98,6 +118,15 @@ namespace ConferenceBooking.Application
             if (capacity == 0)
                 return "Capacity cannot be zero.";
 
+            return null;
+        }
+
+        internal static string? ValidateAmountInstances<T>(List<T> existing, string entity)
+        {
+            if(existing.Count >= 9)
+            {
+                return $"Cannot create more than 9 {entity}";
+            }
             return null;
         }
     }

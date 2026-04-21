@@ -11,7 +11,15 @@ namespace ConferenceBooking.Domain.Entities
         public string Name
         {
             get => name;
-            set => name = char.ToUpper(value.Trim()[0]) + value.Trim()[1..].ToLower();
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    name = value;
+                    return;
+                }
+                name = char.ToUpper(value.Trim()[0]) + value.Trim()[1..].ToLower();
+            }
         }
         public List<ConferenceRoom> ConferenceRooms { get; set; } = [];
 

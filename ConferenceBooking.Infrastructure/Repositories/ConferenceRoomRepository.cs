@@ -2,8 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using ConferenceBooking.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using ConferenceBooking.Application.RepositoryInterfaces;
 
 namespace ConferenceBooking.Infrastructure.Repositories
 {
@@ -11,5 +11,8 @@ namespace ConferenceBooking.Infrastructure.Repositories
     {
         public async Task<List<ConferenceRoom>> GetAllRoomsWithFeaturesAsync()
             => await dbSet.Include(r => r.RoomFeatures).ToListAsync();
+
+        public async Task<ConferenceRoom?> GetRoomByIdWithFeaturesAsync(int id) 
+            => await dbSet.Include(r => r.RoomFeatures).FirstOrDefaultAsync(r => r.Id == id);
     }
 }

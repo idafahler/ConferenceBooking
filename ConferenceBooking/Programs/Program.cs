@@ -1,6 +1,6 @@
-﻿using ConferenceBooking.Application.Interfaces;
+﻿using ConferenceBooking.Application.RepositoryInterfaces;
+using ConferenceBooking.Application.ServiceInterfaces;
 using ConferenceBooking.Application.Services;
-using ConferenceBooking.Domain.Interfaces;
 using ConferenceBooking.Infrastructure;
 using ConferenceBooking.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +22,8 @@ namespace ConferenceBooking.Presentation.Programs
 
             services.AddScoped<IBookingRepository, BookingRepository>();
             services.AddScoped<IBookingService, BookingService>();
+
+            services.AddScoped<IBookingAddOnRepository, BookingAddOnRepository>();
 
             services.AddScoped<IConferenceRoomRepository, ConferenceRoomRepository>();
             services.AddScoped<IConferenceRoomService, ConferenceRoomService>();

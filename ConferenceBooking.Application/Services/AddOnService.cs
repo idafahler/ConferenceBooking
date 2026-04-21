@@ -1,6 +1,6 @@
-﻿using ConferenceBooking.Application.Interfaces;
+﻿using ConferenceBooking.Application.RepositoryInterfaces;
+using ConferenceBooking.Application.ServiceInterfaces;
 using ConferenceBooking.Domain.Entities;
-using ConferenceBooking.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -20,6 +20,10 @@ namespace ConferenceBooking.Application.Services
         public async Task<ServiceResult> CreateAddOnAsync(AddOn addOn)
         {
             var allAddOns = await GetAllAddOnsAsync();
+
+            var maxError = ValidationHelper.ValidateAmountInstances(allAddOns, "add ons");
+            if (maxError is not null)
+                return ServiceResult.Fail(maxError);
 
             var errors = CheckProperties(addOn, allAddOns);
 

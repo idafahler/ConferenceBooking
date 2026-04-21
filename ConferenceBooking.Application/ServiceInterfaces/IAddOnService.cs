@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ConferenceBooking.Application.Interfaces
+namespace ConferenceBooking.Application.ServiceInterfaces
 {
     public interface IAddOnService
     {

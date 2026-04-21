@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ConferenceBooking.Presentation.Helper
+namespace ConferenceBooking.Presentation.Shared
 {
     internal static class Menu
     {
@@ -18,7 +18,6 @@ namespace ConferenceBooking.Presentation.Helper
                 Console.WriteLine($"[{i +1}] {options[i]}");
             }
             Console.WriteLine($"[0] {navigation}\n");
-            Console.Write("Choose: ");
             return Console.ReadKey(true)!;
         }
     }

@@ -11,7 +11,15 @@ namespace ConferenceBooking.Domain.Entities
         public string Company
         {
             get => company;
-            set => company = char.ToUpper(value.Trim()[0]) + value.Trim()[1..].ToLower();
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    company = value;
+                    return;
+                }
+                company = char.ToUpper(value.Trim()[0]) + value.Trim()[1..].ToLower();
+            }
         }
         public ExternalUser(string username, string passwordHash, string firstName, string lastName, string email, string company)
             : base(username, passwordHash, firstName, lastName, email)

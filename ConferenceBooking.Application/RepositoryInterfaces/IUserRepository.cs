@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ConferenceBooking.Domain.Interfaces
+namespace ConferenceBooking.Application.RepositoryInterfaces
 {
-    public interface IBookingAddOnRepository : IRepository<BookingAddOn>
+    public interface IUserRepository : IRepository<User>
     {
     }
 }

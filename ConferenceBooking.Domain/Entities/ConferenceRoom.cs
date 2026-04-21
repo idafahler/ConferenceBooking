@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Linq;
 
 namespace ConferenceBooking.Domain.Entities
 {
@@ -11,7 +12,15 @@ namespace ConferenceBooking.Domain.Entities
         public string Number
         {
             get => number;
-            set => number = value.Trim();
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    number = string.Empty;
+                    return;
+                }
+                number = value.Trim();
+            }
         }
         public int Capacity { get; set; }
         public decimal PricePerHour { get; set; }

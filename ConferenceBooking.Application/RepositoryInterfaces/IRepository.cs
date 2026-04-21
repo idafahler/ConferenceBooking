@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ConferenceBooking.Domain.Interfaces
+namespace ConferenceBooking.Application.RepositoryInterfaces
 {
     public interface IRepository<T> where T : class
     {

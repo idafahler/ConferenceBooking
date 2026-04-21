@@ -1,5 +1,5 @@
-﻿using ConferenceBooking.Domain.Entities;
-using ConferenceBooking.Domain.Interfaces;
+﻿using ConferenceBooking.Application.RepositoryInterfaces;
+using ConferenceBooking.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;

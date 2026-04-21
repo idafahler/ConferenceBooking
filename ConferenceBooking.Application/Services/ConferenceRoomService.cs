@@ -1,6 +1,6 @@
-﻿using ConferenceBooking.Application.Interfaces;
+﻿using ConferenceBooking.Application.RepositoryInterfaces;
+using ConferenceBooking.Application.ServiceInterfaces;
 using ConferenceBooking.Domain.Entities;
-using ConferenceBooking.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -16,23 +16,30 @@ namespace ConferenceBooking.Application.Services
             => await roomRepo.GetByIdAsync(id);
         public async Task<IEnumerable<ConferenceRoom>> FindRoomsAsync(Expression<Func<ConferenceRoom, bool>> condition)
             => await roomRepo.FindAsync(condition);
+        public async Task<ConferenceRoom?> GetRoomByIdWithFeaturesAsync(int id) 
+            => await roomRepo.GetRoomByIdWithFeaturesAsync(id);
 
         public async Task<ServiceResult> CreateRoomAsync(ConferenceRoom room)
         {
             var allRooms = await GetAllRoomsAsync();
+
+            var maxError = ValidationHelper.ValidateAmountInstances(allRooms, "conference rooms");
+            if (maxError is not null)
+                return ServiceResult.Fail(maxError);
+
             var errors = CheckProperties(room, allRooms);
 
-            if (errors.Any())
+            if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
             await roomRepo.AddAsync(room);
             return ServiceResult.Ok("Conference room was created successfully");
         }
 
-        public async Task<ServiceResult> UpdateRoomAsync(ConferenceRoom room)
+        public async Task<ServiceResult> UpdateRoomAsync(ConferenceRoom roomIn)
         {
-            ConferenceRoom? existing = await GetRoomByIdAsync(room.Id);
-            if (existing is null)
+            ConferenceRoom? room = await GetRoomByIdAsync(roomIn.Id);
+            if (room is null)
                 return ServiceResult.Fail("Conference room was not found.");
 
             var allRooms = (await GetAllRoomsAsync())
@@ -41,7 +48,7 @@ namespace ConferenceBooking.Application.Services
 
             var errors = CheckProperties(room, allRooms);
 
-            if (errors.Any())
+            if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
             await roomRepo.UpdateAsync(room);
@@ -69,6 +76,9 @@ namespace ConferenceBooking.Application.Services
             var nameError = ValidationHelper.ValidateUniqueName(room.Number,"Name" ,allRooms, c => c.Number);
             if (nameError is not null)
                 errors.Add("Number", nameError);
+
+            if (room.Number != null && room.Number.Length > 4)
+                errors.Add("Number length", "Room number cannot exceed 4 characters.");
 
             var capacityError = ValidationHelper.ValidateCapacity(room.Capacity);
             if(capacityError is not null)

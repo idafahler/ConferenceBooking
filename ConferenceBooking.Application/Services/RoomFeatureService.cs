@@ -1,11 +1,10 @@
-﻿using ConferenceBooking.Application.Interfaces;
+﻿using ConferenceBooking.Application.RepositoryInterfaces;
+using ConferenceBooking.Application.ServiceInterfaces;
 using ConferenceBooking.Domain.Entities;
-using ConferenceBooking.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ConferenceBooking.Application.Services
 {
@@ -22,6 +21,10 @@ namespace ConferenceBooking.Application.Services
         {
             var errors = new Dictionary<string, string>();
             var allFeatures = await GetAllFeaturesAsync();
+
+            var maxError = ValidationHelper.ValidateAmountInstances(allFeatures, "features");
+            if (maxError is not null)
+                return ServiceResult.Fail(maxError);
 
             var nameError = ValidationHelper.ValidateUniqueName(feature.Name, "Name", allFeatures, f => f.Name);
             if (nameError is not null)

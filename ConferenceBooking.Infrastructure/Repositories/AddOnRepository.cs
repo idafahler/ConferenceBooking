@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using ConferenceBooking.Domain.Interfaces;
+using ConferenceBooking.Application.RepositoryInterfaces;
 
 namespace ConferenceBooking.Infrastructure.Repositories
 {

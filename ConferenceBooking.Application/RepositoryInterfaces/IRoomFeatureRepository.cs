@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ConferenceBooking.Domain.Interfaces
+namespace ConferenceBooking.Application.RepositoryInterfaces
 {
     public interface IRoomFeatureRepository : IRepository<RoomFeature>
     {

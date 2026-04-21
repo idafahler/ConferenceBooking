@@ -1,5 +1,5 @@
-﻿using ConferenceBooking.Application.Interfaces;
-using ConferenceBooking.Application.Models;
+﻿using ConferenceBooking.Application.Models;
+using ConferenceBooking.Application.ServiceInterfaces;
 using ConferenceBooking.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -16,16 +16,16 @@ namespace ConferenceBooking.Infrastructure
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
             var existingUsers = await userService.GetAllUsersAsync();
 
-            if (existingUsers.Any())
+            if (existingUsers.Count != 0)
                 return;
 
             var users = new List<UserDetails>
             {
                 new(UserType.Admin, "admin", "Admin123!", "Admin", "Adminsson", "admin@conference.com"),
-                new(UserType.Employee, "erik.it", "Pass123!", "Erik", "Eriksson", "erik@conference.com", Department.IT),
-                new(UserType.Employee, "maria.hr", "Pass123!", "Maria", "Johansson", "maria@conference.com", Department.HR),
-                new(UserType.ExternalUser, "guest1", "Pass123!", "Karl", "Svensson", "karl@volvo.com", company: "Volvo"),
-                new(UserType.ExternalUser, "guest2", "Pass123!", "Lisa", "Nilsson", "lisa@ikea.com", company: "IKEA")
+                new(UserType.Employee, "erik.it", "Erik123!", "Erik", "Eriksson", "erik@conference.com", Department.IT),
+                new(UserType.Employee, "maria.hr", "Maria123!", "Maria", "Johansson", "maria@conference.com", Department.HR),
+                new(UserType.ExternalUser, "karlvolvo", "Karl123!", "Karl", "Svensson", "karl@volvo.com", company: "Volvo"),
+                new(UserType.ExternalUser, "lisaikea", "Lisa123!", "Lisa", "Nilsson", "lisa@ikea.com", company: "IKEA")
             };
 
             foreach(var userDetails in users)
