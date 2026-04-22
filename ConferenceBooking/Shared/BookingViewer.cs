@@ -33,11 +33,9 @@ namespace ConferenceBooking.Presentation.Shared
 
                 switch (key.Key)
                 {
-                    case ConsoleKey.RightArrow when _weekOffset < 2:
-                        _weekOffset++;
+                    case ConsoleKey.RightArrow when _weekOffset < 2: _weekOffset++; //changes week only when condition is true
                         break;
-                    case ConsoleKey.LeftArrow when _weekOffset > -1:
-                        _weekOffset--;
+                    case ConsoleKey.LeftArrow when _weekOffset > -1: _weekOffset--;
                         break;
                     case ConsoleKey.Escape:
                         return null;
@@ -48,7 +46,7 @@ namespace ConferenceBooking.Presentation.Shared
                             var room = rooms.FirstOrDefault(r => r.Id == id);
                             if (room is not null)
                             {
-                                var result = await SelectDayAndTime(weekStart, room, bookings);
+                                var result = await SelectDayAndTime(weekStart, room, bookings); //returns tuple
                                 if (result is not null) return result;
                             }
                         }
@@ -104,7 +102,7 @@ namespace ConferenceBooking.Presentation.Shared
                         _ => ""
                     };
 
-                    Console.Write($"{label,14}");
+                    Console.Write($"{label,14}"); //writes out status of room for each day.
                     Console.ResetColor();
                 }
                 Console.WriteLine();
@@ -116,33 +114,54 @@ namespace ConferenceBooking.Presentation.Shared
             if (date < DateTime.Today)
                 return DayStatus.Passed;
 
-            var dayBookings = bookings
+            var dayBookings = bookings //gets bookings for room on day
                 .Where(b => b.ConferenceRoomId == roomId && b.StartTime.Date == date.Date)
                 .ToList();
 
-            if (dayBookings.Count == 0)
-                return DayStatus.Available;
-
+            int availableHours = 0;
             int bookedHours = 0;
-            for (int hour = 8; hour < 17; hour++)
+
+            for (int hour = 8; hour < 17; hour++) //iterates over each hour
             {
                 var slotTime = date.AddHours(hour);
-                if (dayBookings.Any(b => slotTime >= b.StartTime && slotTime < b.EndTime))
+
+                if (slotTime <= DateTime.Now) //hours already past today does not count
+                    continue;
+
+                if (dayBookings.Any(b => slotTime >= b.StartTime && slotTime < b.EndTime)) //checks if room is booked this hour
                     bookedHours++;
+                else
+                    availableHours++;
             }
 
-            return bookedHours >= 9 ? DayStatus.FullyBooked : DayStatus.PartiallyBooked;
+            if (availableHours == 0 && bookedHours == 0) //nothing available and nothing booked. day has passed
+                return DayStatus.Passed;
+
+            if (availableHours == 0) //no available hours, everything is booked
+                return DayStatus.FullyBooked;
+
+            if (bookedHours > 0) // some booked hours but not all, partially booked day.
+                return DayStatus.PartiallyBooked;
+
+            return DayStatus.Available; //last case, everything is available
         }
 
         private void PrintNavigationAndRoomInfo(List<ConferenceRoom> rooms)
         {
             Console.WriteLine();
             Console.WriteLine(new string('-', 80));
-            Console.WriteLine("\nRoom details:");
+
+            Console.WriteLine($"\nId {"Room",8} {"Capacity",14} {"Price/ hour",16}");
+            Console.WriteLine($"{new string('-', 45)}");
+
             foreach (var room in rooms)
             {
-                Console.WriteLine($"[{room.Id}] {room.Number,-6} Capacity: {room.Capacity,-4} Price: {room.PricePerHour:C}/hr");
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write($"[{room.Id}] ");
+                Console.ResetColor();
+                Console.WriteLine($"{room.Number,7} {room.Capacity,14} {room.PricePerHour,16:C0}");
             }
+
             Console.WriteLine();
             Console.WriteLine($"[1-{rooms.Count}] Select room");
             Console.WriteLine("[</>] Previous/Next week");
@@ -152,14 +171,14 @@ namespace ConferenceBooking.Presentation.Shared
         private async Task<(ConferenceRoom room, DateTime start, DateTime end)?> SelectDayAndTime(
             DateTime weekStart, ConferenceRoom room, List<Booking> bookings)
         {
-            Console.Write("\nSelect day (1-Mon, 2-Tue, 3-Wed, 4-Thu, 5-Fri): ");
+            Console.Write("\nSelect day: [1]Mon [2]Tue [3]Wed [4]Thu [5]Fri: ");
             if (!int.TryParse(Console.ReadLine(), out int dayChoice) || dayChoice < 1 || dayChoice > 5)
             {
                 SharedUIMethods.PrintMessageSleep("Invalid day.");
                 return null;
             }
 
-            var selectedDate = weekStart.AddDays(dayChoice - 1);
+            var selectedDate = weekStart.AddDays(dayChoice - 1); //taking choice - 1 to translate to weekday. Monday == weekstart
 
             if (selectedDate < DateTime.Today)
             {
@@ -170,45 +189,54 @@ namespace ConferenceBooking.Presentation.Shared
             Console.WriteLine($"\nRoom: {room.Number} - {selectedDate:ddd dd/MM}:");
             var dayBookings = bookings
                 .Where(b => b.ConferenceRoomId == room.Id && b.StartTime.Date == selectedDate.Date)
-                .ToList();
+                .ToList(); //gets bookings for day
 
             for (int hour = 8; hour < 17; hour++)
             {
                 var slotTime = selectedDate.AddHours(hour);
-                var isBooked = dayBookings.Any(b => slotTime >= b.StartTime && slotTime < b.EndTime);
 
-                Console.ForegroundColor = isBooked ? ConsoleColor.Red : ConsoleColor.Green;
-                Console.WriteLine($"  {hour:00}:00 - {(isBooked ? "Booked" : "Available")}");
+                if (slotTime <= DateTime.Now) //unavailable times of day to book, already passed in time
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.WriteLine($"  {hour:00}:00 - Passed");
+                }
+                else if (dayBookings.Any(b => slotTime >= b.StartTime && slotTime < b.EndTime)) //booked hours
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"  {hour:00}:00 - Booked");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"  {hour:00}:00 - Available");
+                }
                 Console.ResetColor();
             }
 
-            Console.Write("\nStart hour (8-16): ");
-            if (!int.TryParse(Console.ReadLine(), out int startHour) || startHour < 8 || startHour > 16)
+            //select duration for booking
+            Console.Write("\nStart hour: "); 
+            if (!int.TryParse(Console.ReadLine(), out int startHour))
             {
-                SharedUIMethods.PrintMessageSleep("Invalid start hour.");
+                SharedUIMethods.PrintMessageSleep("Invalid input.");
                 return null;
             }
+            if (startHour == 0) return null;
 
-            Console.Write("Number of hours: ");
-            if (!int.TryParse(Console.ReadLine(), out int hours) || hours < 1 || startHour + hours > 17)
+            Console.Write("End hour: ");
+            if (!int.TryParse(Console.ReadLine(), out int endHour))
             {
-                SharedUIMethods.PrintMessageSleep("Invalid duration.");
+                SharedUIMethods.PrintMessageSleep("Invalid input.");
                 return null;
             }
+            if(endHour == 0) return null;
 
             var start = selectedDate.AddHours(startHour);
-            var end = selectedDate.AddHours(startHour + hours);
+            var end = selectedDate.AddHours(endHour);
 
-            if (dayBookings.Any(b => start < b.EndTime && end > b.StartTime))
-            {
-                SharedUIMethods.PrintMessageSleep("Time slot is already booked.");
-                return null;
-            }
-
-            return (room, start, end);
+            return (room, start, end); //returns room and duration for booking
         }
 
-        private async Task<List<Booking>> GetBookingsForWeek(IBookingService service, DateTime weekStart)
+        private async Task<List<Booking>> GetBookingsForWeek(IBookingService service, DateTime weekStart) //gets all bookings choosen week
         {
             var weekEnd = weekStart.AddDays(5);
             var bookings = await service.FindBookingsAsync(b =>
@@ -217,7 +245,7 @@ namespace ConferenceBooking.Presentation.Shared
             return bookings.ToList();
         }
 
-        private DateTime GetMondayOfWeek(int offset)
+        private DateTime GetMondayOfWeek(int offset) //gets monday of week
         {
             var today = DateTime.Today;
             var diff = (int)today.DayOfWeek - (int)DayOfWeek.Monday;
@@ -225,7 +253,7 @@ namespace ConferenceBooking.Presentation.Shared
             return today.AddDays(-diff + (offset * 7));
         }
 
-        private int GetWeekNumber(DateTime date)
+        private int GetWeekNumber(DateTime date) //gets week number
         {
             var cal = System.Globalization.CultureInfo.CurrentCulture.Calendar;
             return cal.GetWeekOfYear(date, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);

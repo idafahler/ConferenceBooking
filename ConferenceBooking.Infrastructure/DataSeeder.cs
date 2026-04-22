@@ -1,6 +1,8 @@
 ﻿using ConferenceBooking.Application.Models;
 using ConferenceBooking.Application.ServiceInterfaces;
+using ConferenceBooking.Domain.Entities;
 using ConferenceBooking.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -13,25 +15,64 @@ namespace ConferenceBooking.Infrastructure
         public static async Task SeedAsync(IServiceScopeFactory scopeFactory)
         {
             using var scope = scopeFactory.CreateScope();
-            var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
-            var existingUsers = await userService.GetAllUsersAsync();
+            var context = scope.ServiceProvider.GetRequiredService<ConferenceBookingContext>();
 
-            if (existingUsers.Count != 0)
+            var existingUsers = await context.Users.CountAsync();
+            if (existingUsers > 0)
                 return;
 
-            var users = new List<UserDetails>
-            {
-                new(UserType.Admin, "admin", "Admin123!", "Admin", "Adminsson", "admin@conference.com"),
-                new(UserType.Employee, "erik.it", "Erik123!", "Erik", "Eriksson", "erik@conference.com", Department.IT),
-                new(UserType.Employee, "maria.hr", "Maria123!", "Maria", "Johansson", "maria@conference.com", Department.HR),
-                new(UserType.ExternalUser, "karlvolvo", "Karl123!", "Karl", "Svensson", "karl@volvo.com", company: "Volvo"),
-                new(UserType.ExternalUser, "lisaikea", "Lisa123!", "Lisa", "Nilsson", "lisa@ikea.com", company: "IKEA")
-            };
+            var admin = new Admin("admin", BCrypt.Net.BCrypt.HashPassword("Admin123!"), "Admin", "Adminsson", "admin@conference.com");
+            var maria = new Employee("maria.hr", BCrypt.Net.BCrypt.HashPassword("Maria123!"), "Maria", "Johansson", "maria@conference.com", Department.HR);
+            var lisa = new ExternalUser("lisaikea", BCrypt.Net.BCrypt.HashPassword("Lisa123!"), "Lisa", "Nilsson", "lisa@ikea.com", "IKEA");
 
-            foreach(var userDetails in users)
-            {
-                await userService.CreateUserAsync(userDetails);
-            }
+            context.AddRange(admin, maria, lisa);
+            await context.SaveChangesAsync();
+
+            var friday = GetNextWeekday(DayOfWeek.Friday);
+            var nextMonday = GetNextWeekday(DayOfWeek.Monday, nextWeek: true);
+            var nextTuesday = GetNextWeekday(DayOfWeek.Tuesday, nextWeek: true);
+
+            var room1 = await context.ConferenceRooms.FindAsync(1);
+            var room2 = await context.ConferenceRooms.FindAsync(2);
+
+            context.AddRange(
+                new Booking
+                {
+                    User = maria,
+                    ConferenceRoomId = 1,
+                    StartTime = friday.AddHours(13),
+                    EndTime = friday.AddHours(16),
+                    TotalPrice = 0,
+                    CreatedAt = DateTime.Now
+                },
+                new Booking
+                {
+                    User = maria,
+                    ConferenceRoomId = 2,
+                    StartTime = nextMonday.AddHours(8),
+                    EndTime = nextMonday.AddHours(17),
+                    TotalPrice = 0,
+                    CreatedAt = DateTime.Now
+                },
+                new Booking
+                {
+                    User = lisa,
+                    ConferenceRoomId = 2,
+                    StartTime = nextTuesday.AddHours(10),
+                    EndTime = nextTuesday.AddHours(14),
+                    TotalPrice = 4 * room2!.PricePerHour,
+                    CreatedAt = DateTime.Now
+                });
+
+            await context.SaveChangesAsync();
+        }
+
+        private static DateTime GetNextWeekday(DayOfWeek day, bool nextWeek = false) //Dynamic dates
+        {
+            var today = DateTime.Today;
+            var diff = (int)day - (int)today.DayOfWeek;
+            if (diff <= 0 || nextWeek) diff += 7;
+            return today.AddDays(diff);
         }
     }
 }

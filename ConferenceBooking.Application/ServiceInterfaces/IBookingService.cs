@@ -16,6 +16,7 @@ namespace ConferenceBooking.Application.ServiceInterfaces
         Task<ServiceResult> DeleteBookingAsync(int id);
         Task<List<Booking>> GetAllBookingsForUserWithDetailsAsync(int userId);
         Task<Booking?> GetBookingByIdWithDetailsAsync(int id);
-
+        Task<ServiceResult> AddAddonToBookingAsync(int bookingId, int addonId);
+        Task<ServiceResult> RemoveAddonFromBookingAsync(int bookingId, int bookingAddonId);
     }
 }

@@ -7,10 +7,12 @@ namespace ConferenceBooking.Application
 {
     public static class ValidationHelper
     {
-        internal static string? ValidateUniqueName<T>(string? name, string property, List<T> existing, Func<T, string> selector)
+        public static string? ValidateUniqueName<T>(string? name, string property, List<T> existing, Func<T, string> selector)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return $"{property} is required";
+
+            name = name.Trim();
 
             if (name.Length < 2)
                 return $"{property} must be at least 2 characters long.";
@@ -18,16 +20,18 @@ namespace ConferenceBooking.Application
             if (name.Length > 64)
                 return $"{property} must be under 64 characters long.";
 
-            if (existing.Any(x => selector(x).Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-                return $"{property} already exists.";
+            if (existing.Select(selector).Contains(name, StringComparer.OrdinalIgnoreCase))
+                return $"{property} already exists";
 
             return null;
         }
 
-        internal static string? ValidateName(string? name, string property)
+        public static string? ValidateName(string? name, string property)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return $"{property} is required";
+
+            name = name.Trim();
 
             if (name.Length < 2)
                 return $"{property} must be at least 2 characters long.";
@@ -38,22 +42,33 @@ namespace ConferenceBooking.Application
             if (name.All(char.IsDigit))
                 return $"{property} cannot be only digits.";
 
+            if (name.Count(char.IsLetter) < 2)
+                return $"{property} must contain at least 2 letters";
+
+            if (name.Contains("  "))
+                return $"{property} cannot contain consecutive spaces";
+
+            if (name.Count(' ') > 3)
+                return $"{property} cannot contain more than 3 spaces";
+
             return null;
         }
 
-        internal static string? ValidateEmail (string? email)
+        internal static string? ValidateEmail(string? email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return "Email is required.";
 
-            if (email!.Count(c => c == '@') != 1 || !email!.Contains('.') ||
+            email = email.Trim();
+
+            if (email.Count(c => c == '@') != 1 || !email.Contains('.') ||
                 email.IndexOf('@') < 2 || email.IndexOf('@') >= email.Length - 1)
                 return "Email is invalid.";
 
             return null;
         }
 
-        internal static string? ValidatePassWord(string? password)
+        public static string? ValidatePassWord(string? password)
         {
             if (string.IsNullOrWhiteSpace(password))
                 return "Password is required";
@@ -84,27 +99,36 @@ namespace ConferenceBooking.Application
             if (price == 0)
                 return "Price can't be zero.";
 
+            if (price > decimal.MaxValue)
+                return "Value is too large.";
+
             return null;
         }
 
         internal static string? ValidateTimeRange(DateTime? startTime, DateTime? endTime)
         {
+            if (startTime is null || endTime is null)
+                return "Startime and endtime are required.";
             if (startTime >= endTime)
                 return "Start time must be before end time.";
             if (startTime < DateTime.Now)
                 return "Start time cannot be in the past";
+            if (startTime.Value.Hour < 8 || startTime.Value.Hour > 16)
+                return "Start time must be between 08:00 and 16:00.";
+            if (endTime.Value.Hour < 9 || endTime.Value.Hour > 17)
+                return "End time must be between 09:00 and 17:00";
 
-            return null;
+                return null;
         }
 
-        internal static string? ValidateNoBookingConflict(DateTime startTime, DateTime endTime, int roomId, 
+        internal static string? ValidateNoBookingConflict(DateTime startTime, DateTime endTime, int roomId,
             List<Booking> existingBookings, int? excludeBookingId = null)
         {
             var conflict = existingBookings
                 .Where(b => b.ConferenceRoomId == roomId)
                 .Where(b => excludeBookingId == null || b.Id != excludeBookingId)
                 .Any(b => b.StartTime < endTime && b.EndTime > startTime);
-            if(conflict)
+            if (conflict)
                 return "The room is already booked during this time.";
 
             return null;
@@ -118,12 +142,15 @@ namespace ConferenceBooking.Application
             if (capacity == 0)
                 return "Capacity cannot be zero.";
 
+            if (capacity > int.MaxValue)
+                return "Value is too large.";
+
             return null;
         }
 
         internal static string? ValidateAmountInstances<T>(List<T> existing, string entity)
         {
-            if(existing.Count >= 9)
+            if (existing.Count >= 9)
             {
                 return $"Cannot create more than 9 {entity}";
             }

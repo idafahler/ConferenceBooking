@@ -14,12 +14,6 @@ namespace ConferenceBooking.Infrastructure.Repositories
         public async Task<T?> GetByIdAsync(int id) 
             => await dbSet.FindAsync(id);
 
-        //public async Task<T?> GetByIdAsync(int id)
-        //{
-        //    return await dbSet.AsNoTracking()
-        //        .FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
-        //}
-
         public async Task<List<T>> GetAllAsync() 
             => await dbSet.AsNoTracking().ToListAsync();
 

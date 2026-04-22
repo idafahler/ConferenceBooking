@@ -2,5 +2,6 @@
   <Project Path="ConferenceBooking.Application/ConferenceBooking.Application.csproj" />
   <Project Path="ConferenceBooking.Domain/ConferenceBooking.Domain.csproj" />
   <Project Path="ConferenceBooking.Infrastructure/ConferenceBooking.Infrastructure.csproj" />
+  <Project Path="ConferenceBooking.Tests/ConferenceBooking.Tests.csproj" Id="92de29b1-b631-498a-9096-b0e139da6e8f" />
   <Project Path="ConferenceBooking/ConferenceBooking.Presentation.csproj" />
 </Solution>

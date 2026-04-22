@@ -10,7 +10,7 @@ using System.Text;
 namespace ConferenceBooking.Application.Services
 {
     public class BookingService(IBookingRepository repo, IConferenceRoomRepository roomRepo, IAddOnRepository addOnRepo,
-        IBookingAddOnRepository bookingAddOnRepo) : IBookingService
+        IBookingAddOnRepository bookingAddOnRepo, IUserRepository userRepo) : IBookingService
     {
         public async Task<List<Booking>> GetAllBookingsAsync()
             => await repo.GetAllAsync();
@@ -57,7 +57,7 @@ namespace ConferenceBooking.Application.Services
                 var addOn = await addOnRepo.GetByIdAsync(id);
                 if (addOn is null) continue;
 
-                var bookingAddOn = BookingFactory.CreateAddOn(booking.Id, addOn, room.Capacity);
+                var bookingAddOn = BookingFactory.CreateBookingAddOnRelation(booking.Id, addOn, room.Capacity);
                 await bookingAddOnRepo.AddAsync(bookingAddOn);
                 addOnTotal += bookingAddOn.TotalPrice;
             }
@@ -84,17 +84,24 @@ namespace ConferenceBooking.Application.Services
                 errors.Add("Time", timeError);
 
             var allBookings = await GetAllBookingsAsync();
-
-            var conflictError = ValidationHelper.ValidateNoBookingConflict
-                (booking.StartTime, booking.EndTime,booking.ConferenceRoomId ,allBookings , booking.Id);
+            var conflictError = ValidationHelper.ValidateNoBookingConflict(
+                booking.StartTime, booking.EndTime, booking.ConferenceRoomId, allBookings, booking.Id);
             if (conflictError is not null)
                 errors.Add("Conflict", conflictError);
 
             if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
+            var room = await roomRepo.GetByIdAsync(booking.ConferenceRoomId);
+            var user = await userRepo.GetByIdAsync(booking.UserId!.Value);
+
+            var hours = (decimal)(booking.EndTime - booking.StartTime).TotalHours;
+            var roomPrice = user is Employee ? 0 : hours * room!.PricePerHour;
+            var addonTotal = await bookingAddOnRepo.CalculateTotalAddonPriceAsync(booking.Id);
+            booking.TotalPrice = roomPrice + addonTotal;
+
             await repo.UpdateAsync(booking);
-            return ServiceResult.Ok("Booking was updated successfully");
+            return ServiceResult.Ok("Booking was updated successfully.");
         }
 
         public async Task<ServiceResult> DeleteBookingAsync(int bookingId)
@@ -105,6 +112,50 @@ namespace ConferenceBooking.Application.Services
 
             await repo.RemoveAsync(booking);
             return ServiceResult.Ok($"Booking was deleted successfully");
+        }
+
+        public async Task<ServiceResult> AddAddonToBookingAsync(int bookingId, int addonId)
+        {
+            var booking = await repo.GetByIdAsync(bookingId);
+            if (booking is null)
+                return ServiceResult.Fail("Booking not found.");
+
+            var addon = await addOnRepo.GetByIdAsync(addonId);
+            if (addon is null)
+                return ServiceResult.Fail("Add on not found.");
+
+            var existingAddons = await bookingAddOnRepo.FindAsync(ba => ba.BookingId == bookingId && ba.AddOnId == addonId);
+            if (existingAddons.Any())
+                return ServiceResult.Fail($"{addon.Name} is already added to this booking.");
+
+            var room = await roomRepo.GetByIdAsync(booking.ConferenceRoomId);
+            if (room is null)
+                return ServiceResult.Fail("Room not found.");
+
+            var bookingAddon = BookingFactory.CreateBookingAddOnRelation(bookingId, addon, room.Capacity);
+            await bookingAddOnRepo.AddAsync(bookingAddon);
+
+            booking.TotalPrice += bookingAddon.TotalPrice;
+            await repo.UpdateAsync(booking);
+
+            return ServiceResult.Ok($"{addon.Name} added to booking.");
+        }
+
+        public async Task<ServiceResult> RemoveAddonFromBookingAsync(int bookingId, int bookingAddonId)
+        {
+            var booking = await repo.GetByIdAsync(bookingId);
+            if (booking is null)
+                return ServiceResult.Fail("Booking not found.");
+
+            var bookingAddon = await bookingAddOnRepo.GetByIdAsync(bookingAddonId);
+            if (bookingAddon is null)
+                return ServiceResult.Fail("Add on not found on booking.");
+
+            booking.TotalPrice -= bookingAddon.TotalPrice;
+            await bookingAddOnRepo.RemoveAsync(bookingAddon);
+            await repo.UpdateAsync(booking);
+
+            return ServiceResult.Ok("Add on removed from booking.");
         }
     }
 }

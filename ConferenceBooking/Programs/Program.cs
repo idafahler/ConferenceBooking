@@ -34,6 +34,8 @@ namespace ConferenceBooking.Presentation.Programs
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUserService, UserService>();
 
+            services.AddScoped<IStatisticsService, StatisticsService>();
+
             var provider = services.BuildServiceProvider();
             var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 

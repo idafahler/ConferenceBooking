@@ -15,34 +15,12 @@ namespace ConferenceBooking.Presentation.Shared
     {
         internal async Task CreateNewUser(UserType role)
         {
-            Console.Write("Username: ");
-            var username = Console.ReadLine()!;
-            Console.Write("Password: ");
-            var password = SharedUIMethods.ReadPassword();
-            Console.Write("First name: ");
-            var firstName = Console.ReadLine()!;
-            Console.Write("Last name: ");
-            var lastName = Console.ReadLine()!;
-            Console.Write("Email: ");
-            var email = Console.ReadLine()!;
-
-            Department? department = null;
-            string? company = null;
-
-            if (role == UserType.Employee)
+            UserDetails details = await GetUserDetails(role);
+            if(details == null)
             {
-                var departments = string.Join(", ", Enum.GetValues<Department>());
-                Console.WriteLine($"All departments: {departments}");
-                Console.Write("\nDepartment: ");
-                department = Enum.Parse<Department>(Console.ReadLine()!, true);
+                SharedUIMethods.PrintMessageSleep("Returning");
+                return;
             }
-            else if (role == UserType.ExternalUser)
-            {
-                Console.Write("Company: ");
-                company = Console.ReadLine();
-            }
-
-            var details = new UserDetails(role, username, password, firstName, lastName, email, department, company);
 
             var fixers = new Dictionary<string, Action>
             {
@@ -101,7 +79,7 @@ namespace ConferenceBooking.Presentation.Shared
                 {
                     foreach (var error in result.Errors)
                     {
-                        Console.WriteLine($"{error.Value}. Try again.");
+                        Console.WriteLine($"{error.Value}");
                         if (fixers.TryGetValue(error.Key, out var fixer))
                             fixer();
                     }
@@ -109,6 +87,50 @@ namespace ConferenceBooking.Presentation.Shared
             } while (!result.Success);
 
             SharedUIMethods.PrintResultMessage(result);
+        }
+
+        internal async Task<UserDetails> GetUserDetails(UserType role)
+        {
+            Console.Write("Username: ");
+            var username = Console.ReadLine()!;
+            if (username == "0") return null!;
+
+            Console.Write("Password: ");
+            var password = SharedUIMethods.ReadPassword();
+            if (password == "0") return null!;
+
+            Console.Write("First name: ");
+            var firstName = Console.ReadLine()!;
+            if (firstName == "0") return null!;
+
+            Console.Write("Last name: ");
+            var lastName = Console.ReadLine()!;
+            if (lastName == "0") return null!;
+
+            Console.Write("Email: ");
+            var email = Console.ReadLine()!;
+            if (email == "0") return null!;
+
+
+            Department? department = null;
+            string? company = null;
+
+            if (role == UserType.Employee)
+            {
+                var departments = string.Join(", ", Enum.GetValues<Department>());
+                Console.WriteLine($"All departments: {departments}");
+                Console.Write("\nDepartment: ");
+                if(Enum.TryParse<Department>(Console.ReadLine(), true, out var dept))
+                    department = dept;
+            }
+            else if (role == UserType.ExternalUser)
+            {
+                Console.Write("Company: ");
+                company = Console.ReadLine();
+                if(company == "0") return null!;
+            }
+
+            return new UserDetails(role, username, password, firstName, lastName, email, department, company);
         }
 
         internal async Task UpdateUserDetails(int userId)
@@ -172,7 +194,7 @@ namespace ConferenceBooking.Presentation.Shared
         {
             while (true)
             {
-                Console.Write($"Enter new {property} (0 to cancel): ");
+                Console.Write($"Enter new {property}: ");
                 var input = Console.ReadLine()!;
                 if (input == "0") return;
 
@@ -186,7 +208,7 @@ namespace ConferenceBooking.Presentation.Shared
 
                 if (result.Success)
                 {
-                    SharedUIMethods.PrintMessagePause(result.Message);
+                    SharedUIMethods.PrintResultMessage(result);
                     return;
                 }
 
@@ -199,7 +221,7 @@ namespace ConferenceBooking.Presentation.Shared
         {
             while (true)
             {
-                Console.Write("New password (0 to cancel): ");
+                Console.Write("New password: ");
                 var password = SharedUIMethods.ReadPassword();
                 if (password == "0") return;
 
@@ -211,12 +233,11 @@ namespace ConferenceBooking.Presentation.Shared
 
                 if (result.Success)
                 {
-                    SharedUIMethods.PrintMessagePause(result.Message);
+                    SharedUIMethods.PrintResultMessage(result);
                     return;
                 }
 
-                foreach (var error in result.Errors)
-                    Console.WriteLine($"  {error.Value}");
+                Console.WriteLine($"  {result.Message}");
             }
         }
 
@@ -243,7 +264,7 @@ namespace ConferenceBooking.Presentation.Shared
 
                 if (result.Success)
                 {
-                    SharedUIMethods.PrintMessagePause(result.Message);
+                    SharedUIMethods.PrintResultMessage(result);
                     return;
                 }
 
@@ -258,6 +279,16 @@ namespace ConferenceBooking.Presentation.Shared
             var service = scope.ServiceProvider.GetRequiredService<IUserService>();
             var user = await service.GetUserByIdAsync(userId);
 
+            if(user is Admin)
+            {
+                var users = await service.FindUsersAsync(u => u is Admin);
+                if(users.Count() <= 1)
+                {
+                    SharedUIMethods.PrintMessagePause("Can not remove last admin account.");
+                    return false;
+                }
+            }
+
             Console.WriteLine("Are you sure you want to delete the account?");
             Console.WriteLine("Press Y for Yes. Press any other key for No.\n");
             Console.Write("Confirm: ");
@@ -269,7 +300,7 @@ namespace ConferenceBooking.Presentation.Shared
                 if (result.Success)
                     return true;
                 else
-                    SharedUIMethods.PrintMessagePause(result.Message);
+                    SharedUIMethods.PrintResultMessage(result);
             }
             return false;
         }

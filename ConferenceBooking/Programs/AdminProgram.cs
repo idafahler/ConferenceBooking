@@ -108,13 +108,15 @@ namespace ConferenceBooking.Presentation.Programs
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IAddOnService>();
                 var addOns = await service.GetAllAddOnsAsync();
+                if (addOns.Count == 0)
+                    return;
 
-                var options = addOns
-                    .Select(a => $"{a.Name,-20} {a.PricePerPerson,-10:C}/person")
-                    .Append("Create new add on")
-                    .ToArray();
+                var options = addOns.Select(a => $"{a.Name,-20} {a.PricePerPerson,-10:C}/person");
 
-                var key = Menu.Show("Manage Add Ons", "Back", options);
+                if (addOns.Count < 9)
+                    options = options.Append("Create new add on");
+
+                var key = Menu.Show("Manage Add Ons", "Back", options.ToArray());
 
                 if (key.Key == ConsoleKey.D0) 
                     return;
@@ -176,6 +178,11 @@ namespace ConferenceBooking.Presentation.Programs
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IAddOnService>();
                 var addOn = await service.GetAddOnByIdAsync(addOnId);
+                if(addOn is null)
+                {
+                    SharedUIMethods.PrintMessagePause("Could not find add on.");
+                    return;
+                }
 
                 addOn!.Name = input;
                 result = await service.UpdateAddOnAsync(addOn);
@@ -187,7 +194,7 @@ namespace ConferenceBooking.Presentation.Programs
                 }
             } while (!result.Success);
 
-            SharedUIMethods.PrintMessagePause(result.Message);
+            SharedUIMethods.PrintResultMessage(result);
         }
 
         private async Task UpdateAddOnPrice(int addOnId)
@@ -205,13 +212,18 @@ namespace ConferenceBooking.Presentation.Programs
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IAddOnService>();
                 var addOn = await service.GetAddOnByIdAsync(addOnId);
+                if (addOn is null)
+                {
+                    SharedUIMethods.PrintMessagePause("Could not find add on.");
+                    return;
+                }
 
                 addOn!.PricePerPerson = price;
                 var result = await service.UpdateAddOnAsync(addOn);
 
                 if (result.Success)
                 {
-                    SharedUIMethods.PrintMessagePause(result.Message);
+                    SharedUIMethods.PrintResultMessage(result);
                     return;
                 }
 
@@ -271,7 +283,7 @@ namespace ConferenceBooking.Presentation.Programs
                 }
             } while (!result.Success);
 
-            SharedUIMethods.PrintMessagePause(result.Message);
+            SharedUIMethods.PrintResultMessage(result);
         }
 
         private async Task ManageConferenceRooms()
@@ -282,13 +294,15 @@ namespace ConferenceBooking.Presentation.Programs
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IConferenceRoomService>();
                 var rooms = await service.GetAllRoomsAsync();
+                if (rooms.Count == 0)
+                    return;
 
-                var options = rooms
-                    .Select(r => $"{r.Number,-10} Capacity: {r.Capacity,-5} {r.PricePerHour,10:C}/hr")
-                    .Append("Create new room")
-                    .ToArray();
+                var options = rooms.Select(r => $"{r.Number,-10} Capacity: {r.Capacity,-5} {r.PricePerHour,10:C}/hr");
 
-                var key = Menu.Show("Manage Conference Rooms", "Back", options);
+                if (rooms.Count < 9)
+                    options = options.Append("Create new room");
+
+                var key = Menu.Show("Manage Conference Rooms", "Back", options.ToArray());
 
                 if (key.Key == ConsoleKey.D0)
                     return;
@@ -360,6 +374,11 @@ namespace ConferenceBooking.Presentation.Programs
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IConferenceRoomService>();
                 var room = await service.GetRoomByIdAsync(roomId);
+                if(room is null)
+                {
+                    SharedUIMethods.PrintMessagePause("Could not find room.");
+                    return;
+                }
 
                 update(room!, input);
                 result = await service.UpdateRoomAsync(room);
@@ -371,7 +390,7 @@ namespace ConferenceBooking.Presentation.Programs
                 }
             } while (!result.Success);
 
-            SharedUIMethods.PrintMessagePause(result.Message);
+            SharedUIMethods.PrintResultMessage(result);
         }
 
         private async Task UpdateRoomNumericProperty(int roomId, string property, Action<ConferenceRoom, decimal> update)
@@ -385,17 +404,27 @@ namespace ConferenceBooking.Presentation.Programs
                     continue;
                 }
                 if (value == 0) return;
+                if (value > int.MaxValue)
+                {
+                    Console.WriteLine("Value is too large.");
+                    continue;
+                }
 
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IConferenceRoomService>();
                 var room = await service.GetRoomByIdAsync(roomId);
+                if (room is null)
+                {
+                    SharedUIMethods.PrintMessagePause("Could not find room.");
+                    return;
+                }
 
                 update(room!, value);
                 var result = await service.UpdateRoomAsync(room);
 
                 if (result.Success)
                 {
-                    SharedUIMethods.PrintMessagePause(result.Message);
+                    SharedUIMethods.PrintResultMessage(result);
                     return;
                 }
 
@@ -477,7 +506,7 @@ namespace ConferenceBooking.Presentation.Programs
                 }
             } while (!result.Success);
 
-            SharedUIMethods.PrintMessagePause(result.Message);
+            SharedUIMethods.PrintResultMessage(result);
         }
 
         private async Task ManageRoomFeatures(int roomId)
@@ -496,6 +525,11 @@ namespace ConferenceBooking.Presentation.Programs
                 }
 
                 var allFeatures = await featureService.GetAllFeaturesAsync();
+                if(allFeatures.Count == 0)
+                {
+                    SharedUIMethods.PrintMessagePause("Could not find any features.");
+                    return;
+                }
                 var currentFeatures = room.RoomFeatures;
 
                 Console.Clear();
@@ -576,13 +610,18 @@ namespace ConferenceBooking.Presentation.Programs
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IRoomFeatureService>();
                 var features = await service.GetAllFeaturesAsync();
+                if(features.Count == 0)
+                {
+                    SharedUIMethods.PrintMessageSleep("Could not find any features.");
+                    return;
+                }
 
-                var options = features
-                    .Select(f => f.Name)
-                    .Append("Create new feature")
-                    .ToArray();
+                var options = features.Select(f => f.Name);
 
-                var key = Menu.Show("Manage Room Features", "Back", options);
+                if (features.Count < 9)
+                    options = options.Append("Create new feature");
+
+                var key = Menu.Show("Manage Room Features", "Back", options.ToArray());
 
                 if (key.Key == ConsoleKey.D0) return;
 
@@ -646,6 +685,11 @@ namespace ConferenceBooking.Presentation.Programs
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IRoomFeatureService>();
                 var feature = await service.GetFeatureByIdAsync(featureId);
+                if (feature is null)
+                {
+                    SharedUIMethods.PrintMessagePause("Could not find feature.");
+                    return;
+                }
 
                 feature!.Name = input;
                 result = await service.UpdateFeatureAsync(feature);
@@ -657,7 +701,7 @@ namespace ConferenceBooking.Presentation.Programs
                 }
             } while (!result.Success);
 
-            SharedUIMethods.PrintMessagePause(result.Message);
+            SharedUIMethods.PrintResultMessage(result);
         }
 
         private async Task CreateFeature()
@@ -684,12 +728,37 @@ namespace ConferenceBooking.Presentation.Programs
                 }
             } while (!result.Success);
 
-            SharedUIMethods.PrintMessagePause(result.Message);
+            SharedUIMethods.PrintResultMessage(result);
         }
 
         internal async Task SeeStatistics()
         {
+            using var scope = scopeFactory.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<IStatisticsService>();
+            var stats = await service.GetStatisticsAsync();
 
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("Statistics\n");
+            Console.ResetColor();
+
+            Console.WriteLine($"Most booked room:    {stats.MostBookedRoom} ({stats.MostBookedRoomCount} bookings)");
+            Console.WriteLine($"Most popular add-on: {stats.MostPopularAddon} ({stats.MostPopularAddonCount} bookings)");
+
+            Console.WriteLine($"\n{"Room",-10} {"Revenue",12} {"Occupancy for week",20}");
+            Console.WriteLine($"{new string('-', 45)}");
+
+            foreach (var room in stats.RevenuePerRoom)
+            {
+                var occupancy = stats.OccupancyPerRoom.FirstOrDefault(o => o.RoomNumber == room.RoomNumber);
+                Console.WriteLine($"{room.RoomNumber,-10} {room.Revenue,12:C0} {occupancy?.OccupancyPercent,18:F1} %");
+            }
+
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("\nNote: Revenue may appear low relative to occupancy because employee bookings are free.\n");
+            Console.ResetColor();
+
+            SharedUIMethods.PrintMessagePause("");
         }
     }
 }

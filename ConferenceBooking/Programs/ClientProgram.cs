@@ -46,37 +46,45 @@ namespace ConferenceBooking.Presentation.Programs
                 return;
 
             var (room, start, end) = selection.Value;
-
             var selectedAddOns = await SelectAddOns();
 
-            ServiceResult result;
-            do
+            while (true)
             {
                 using var scope = scopeFactory.CreateScope();
                 var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
-                result = await bookingService.CreateBookingAsync(user, room.Id, start, end, selectedAddOns);
+                var result = await bookingService.CreateBookingAsync(user, room.Id, start, end, selectedAddOns);
 
-                if (!result.Success)
+                if (result.Success)
                 {
-                    foreach (var error in result.Errors)
-                    {
-                        Console.WriteLine($"{error.Value}");
-
-                        if (error.Key is "Time" or "Conflict")
-                        {
-                            Console.Write("Error. Enter new start hour (8-16): ");
-                            var startHour = int.Parse(Console.ReadLine()!);
-                            Console.Write("Number of hours: ");
-                            var hours = int.Parse(Console.ReadLine()!);
-                            start = start.Date.AddHours(startHour);
-                            end = start.Date.AddHours(startHour + hours);
-                        }
-                    }
+                    SharedUIMethods.PrintMessagePause(result.Message);
+                    return;
                 }
 
-            } while (!result.Success);
+                foreach (var error in result.Errors)
+                    Console.WriteLine($"  {error.Value}");
 
-            SharedUIMethods.PrintResultMessage(result);
+                while (true)
+                {
+                    Console.Write("New start hour: ");
+                    if (!int.TryParse(Console.ReadLine(), out var startHour))
+                    {
+                        Console.WriteLine("Invalid input.");
+                        continue;
+                    }
+                    if (startHour == 0) return;
+
+                    Console.Write("End hour: ");
+                    if (!int.TryParse(Console.ReadLine(), out var endHour))
+                    {
+                        Console.WriteLine("Invalid input.");
+                        continue;
+                    }
+
+                    start = start.Date.AddHours(startHour);
+                    end = start.Date.AddHours(endHour);
+                    break;
+                }
+            }
         }
 
         private async Task<List<int>> SelectAddOns()
@@ -89,13 +97,13 @@ namespace ConferenceBooking.Presentation.Programs
 
             if (addOns.Count == 0)
             {
-                SharedUIMethods.PrintMessagePause("No add-ons available.");
+                SharedUIMethods.PrintMessagePause("No add ons available.");
                 return selectedAddOns;
             }
             SharedUIMethods.ListAddOns(addOns);
 
             Console.WriteLine("Would you like to add anything?");
-            Console.WriteLine("Press add on ID to add, [0] to finish.\n");
+            Console.WriteLine("Press [ID] to add, [0] to finish.\n");
             while (true)
             {
                 var key = Console.ReadKey(true);
@@ -125,7 +133,7 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Clear();
-                var key = Menu.Show("Managing profile", "Back", "Past bookings", "Upcoming bookings", "Update my details", "Delete account");
+                var key = Menu.Show("Managing profile", "Back", "Past bookings", "Upcoming bookings", "Manage bookings", "Update my details", "Delete account");
 
                 switch (key.Key)
                 {
@@ -136,9 +144,12 @@ namespace ConferenceBooking.Presentation.Programs
                         await GetBookings(user, b => b.StartTime > DateTime.Now, "Upcoming bookings");
                         break;
                     case ConsoleKey.D3:
-                        await _shared.UpdateUserDetails(user.Id);
+                        await ManageUpcomingBookings(user.Id);
                         break;
                     case ConsoleKey.D4:
+                        await _shared.UpdateUserDetails(user.Id);
+                        break;
+                    case ConsoleKey.D5:
                         var deleted = await _shared.DeleteUser(user.Id);
                         if (deleted)
                         {
@@ -154,8 +165,7 @@ namespace ConferenceBooking.Presentation.Programs
                 }
             }
         }
-
-        private async Task GetBookings(User user, Func<Booking, bool> condition, string title)
+        private async Task<IEnumerable<Booking>> GetBookings(User user, Func<Booking, bool> condition, string title)
         {
             using var scope = scopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<IBookingService>();
@@ -164,6 +174,221 @@ namespace ConferenceBooking.Presentation.Programs
 
             Console.WriteLine($"\n{title}");
             SharedUIMethods.ListBookings(filtered);
+
+            return filtered;
+        }
+
+        private async Task ManageUpcomingBookings(int userId)
+        {
+            while (true)
+            {
+                using var scope = scopeFactory.CreateScope();
+                var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
+                var bookings = await bookingService.GetAllBookingsForUserWithDetailsAsync(userId);
+                var upcoming = bookings.Where(b => b.StartTime > DateTime.Now).ToList();
+
+                if (upcoming.Count == 0)
+                {
+                    SharedUIMethods.PrintMessagePause("No upcoming bookings.");
+                    return;
+                }
+
+                Console.Clear();
+                SharedUIMethods.ListBookingsCompact(upcoming, "Upcoming bookings");
+
+                Console.Write("\nEnter booking ID to manage: ");
+                if (!int.TryParse(Console.ReadLine(), out var bookingId) || bookingId == 0)
+                {
+                    SharedUIMethods.PrintMessagePause("Invalid input.");
+                    continue;
+                }
+
+                var booking = upcoming.FirstOrDefault(b => b.Id == bookingId);
+                if (booking is null)
+                {
+                    SharedUIMethods.PrintMessageSleep("Booking not found.");
+                    continue;
+                }
+
+                var deleted = await ManageSingleBooking(booking.Id);
+                if (deleted) return;
+            }
+        }
+
+        private async Task<bool> ManageSingleBooking(int bookingId)
+        {
+            while (true)
+            {
+                using var scope = scopeFactory.CreateScope();
+                var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
+                var booking = await bookingService.GetBookingByIdWithDetailsAsync(bookingId);
+
+                if (booking is null)
+                {
+                    SharedUIMethods.PrintMessagePause("Booking not found.");
+                    return false;
+                }
+
+                var addonInfo = booking.BookingAddOns.Count != 0
+                    ? string.Join(", ", booking.BookingAddOns.Select(ba => $"{ba.AddOn.Name}"))
+                    : "None";
+
+                var key = Menu.Show($"Booking {booking.Id}", "Back",
+                    $"Change time {booking.StartTime:HH}-{booking.EndTime:HH}",
+                    $"Add add ons",
+                    $"Remove add on",
+                    $"Cancel booking");
+
+                switch (key.Key)
+                {
+                    case ConsoleKey.D1:
+                        await UpdateBookingTime(bookingId);
+                        break;
+                    case ConsoleKey.D2:
+                        await AddAddonToBooking(bookingId);
+                        break;
+                    case ConsoleKey.D3:
+                        await RemoveAddonFromBooking(bookingId);
+                        break;
+                    case ConsoleKey.D4:
+                        var result = await bookingService.DeleteBookingAsync(bookingId);
+                        SharedUIMethods.PrintResultMessage(result);
+                        if (result.Success) return true;
+                        break;
+                    case ConsoleKey.D0:
+                        return false;
+                }
+            }
+        }
+
+        private async Task UpdateBookingTime(int bookingId)
+        {
+            while (true)
+            {
+                Console.Write("New start hour: ");
+                if (!int.TryParse(Console.ReadLine(), out var startHour))
+                {
+                    Console.WriteLine("Invalid input.");
+                    continue;
+                }
+                if (startHour == 0) return;
+
+                Console.Write("New end hour: ");
+                if (!int.TryParse(Console.ReadLine(), out var endHour))
+                {
+                    Console.WriteLine("Invalid input.");
+                    continue;
+                }
+                if (endHour == 0) return;
+
+                using var scope = scopeFactory.CreateScope();
+                var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
+                var booking = await bookingService.GetBookingByIdAsync(bookingId);
+
+                booking!.StartTime = booking.StartTime.Date.AddHours(startHour);
+                booking.EndTime = booking.EndTime.Date.AddHours(endHour);
+
+                var result = await bookingService.UpdateBookingAsync(booking);
+
+                if (result.Success)
+                {
+                    SharedUIMethods.PrintResultMessage(result);
+                    return;
+                }
+
+                foreach (var error in result.Errors)
+                    Console.WriteLine($"  {error.Value}");
+            }
+        }
+
+        private async Task AddAddonToBooking(int bookingId)
+        {
+            using var scope = scopeFactory.CreateScope();
+            var addonService = scope.ServiceProvider.GetRequiredService<IAddOnService>();
+            var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
+            var booking = await bookingService.GetBookingByIdWithDetailsAsync(bookingId);
+
+            if (booking is null)
+            {
+                SharedUIMethods.PrintMessagePause("Booking not found.");
+                return;
+            }
+
+            var allAddons = await addonService.GetAllAddOnsAsync();
+            var available = allAddons
+                .Where(a => !booking.BookingAddOns.Any(ba => ba.AddOnId == a.Id))
+                .ToList();
+
+            if (available.Count == 0)
+            {
+                SharedUIMethods.PrintMessagePause("No more add ons available.");
+                return;
+            }
+
+            Console.WriteLine("\nAvailable add ons:");
+            foreach (var addon in available)
+                Console.WriteLine($"  [{addon.Id}] {addon.Name} - {addon.PricePerPerson:C0}/person");
+
+            while (true)
+            {
+                Console.Write("\nEnter add on ID: ");
+                if (!int.TryParse(Console.ReadLine(), out var addonId))
+                {
+                    Console.WriteLine("Invalid input.");
+                    continue;
+                }
+                if (addonId == 0) return;
+
+                var result = await bookingService.AddAddonToBookingAsync(bookingId, addonId);
+                SharedUIMethods.PrintResultMessage(result);
+                return;
+            }
+        }
+
+        private async Task RemoveAddonFromBooking(int bookingId)
+        {
+            using var scope = scopeFactory.CreateScope();
+            var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
+            var booking = await bookingService.GetBookingByIdWithDetailsAsync(bookingId);
+
+            if (booking is null)
+            {
+                SharedUIMethods.PrintMessagePause("Booking not found.");
+                return;
+            }
+
+            if (booking.BookingAddOns.Count == 0)
+            {
+                SharedUIMethods.PrintMessagePause("No add ons to remove.");
+                return;
+            }
+
+            Console.WriteLine("\nCurrent add ons:");
+            var addonList = booking.BookingAddOns.ToList();
+            for (int i = 0; i < addonList.Count; i++)
+                Console.WriteLine($"[{i + 1}] {addonList[i].AddOn.Name} - {addonList[i].TotalPrice:C0}");
+
+            while (true)
+            {
+                Console.Write("\nSelect add on to remove: ");
+                if (!int.TryParse(Console.ReadLine(), out var choice))
+                {
+                    Console.WriteLine("Invalid input.");
+                    continue;
+                }
+                if (choice == 0) return;
+
+                var index = choice - 1;
+                if (index < 0 || index >= addonList.Count)
+                {
+                    Console.WriteLine("Invalid choice.");
+                    continue;
+                }
+
+                var result = await bookingService.RemoveAddonFromBookingAsync(bookingId, addonList[index].Id);
+                SharedUIMethods.PrintMessagePause(result.Message);
+                return;
+            }
         }
     }
 }

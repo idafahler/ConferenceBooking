@@ -22,7 +22,7 @@ namespace ConferenceBooking.Application.Factories
             };
         }
 
-        public static BookingAddOn CreateAddOn(int bookingId, AddOn addOn, int quantity)
+        public static BookingAddOn CreateBookingAddOnRelation(int bookingId, AddOn addOn, int quantity)
         {
             return new BookingAddOn
             {

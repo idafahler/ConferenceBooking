@@ -66,10 +66,10 @@ namespace ConferenceBooking.Presentation.Shared
             foreach(var booking in bookings)
             {
                 Console.WriteLine($"""
-                    Booking #{booking.Id}
+                    Booking Id: {booking.Id}
                         Room: {booking.ConferenceRoom.Number}
                         Date: {booking.StartTime:yyyy-MM-dd}
-                        Time: {booking.StartTime:HH} - {booking.EndTime:HH}
+                        Time: {booking.StartTime:HH}-{booking.EndTime:HH}
                         Total: {booking.TotalPrice:C}
                     """);
                 if(showUser)
@@ -80,7 +80,7 @@ namespace ConferenceBooking.Presentation.Shared
                         .Select(ba => $"{ba.AddOn.Name}")
                         .ToList();
 
-                    Console.WriteLine($"    Add-ons: {string.Join(", ", addonList)}");
+                    Console.WriteLine($"    Add ons: {string.Join(", ", addonList)}");
                 }
                 Console.WriteLine();
             }
@@ -106,6 +106,28 @@ namespace ConferenceBooking.Presentation.Shared
             return;
         }
 
-        
+        internal static void ListBookingsCompact(List<Booking> bookings, string title)
+        {
+            Console.WriteLine($"{title}");
+            Console.WriteLine($"{"ID",-8} {"Room",-11} {"Date",-14} {"Time",-16} {"Total",7}");
+            Console.WriteLine($"{new string('-', 60)}");
+
+            foreach (var booking in bookings)
+            {
+                var date = booking.StartTime.ToString("yyyy-MM-dd");
+                var time = $"{booking.StartTime:HH:00} - {booking.EndTime:HH:00}";
+
+                Console.WriteLine($"{booking.Id,-10}{booking.ConferenceRoom.Number,-10}{date,-14}{time,-16}{booking.TotalPrice,10:C0}");
+
+                if (booking.BookingAddOns.Count != 0)
+                {
+                    var addonList = booking.BookingAddOns
+                        .Select(ba => $"{ba.AddOn.Name} (x{ba.Quantity})")
+                        .ToList();
+
+                    Console.WriteLine($"    Add ons: {string.Join(", ", addonList)}");
+                }
+            }
+        }
     }
 }
