@@ -13,7 +13,7 @@ namespace ConferenceBooking.Domain.Entities
         public ConferenceRoom ConferenceRoom { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public decimal TotalPrice { get; set; }
+        public decimal TotalPrice { get; set; } //totalprice of booking including costs for conference room and maybe add on costs
         public DateTime CreatedAt { get; init; }
         public List<BookingAddOn> BookingAddOns { get; set; } = [];
 

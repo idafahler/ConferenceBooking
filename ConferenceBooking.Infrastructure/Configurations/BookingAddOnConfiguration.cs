@@ -16,9 +16,9 @@ namespace ConferenceBooking.Infrastructure.Configurations
                 .HasColumnType(SqlDbType.Money.ToString());
 
             builder.HasOne(ba => ba.AddOn)
-                .WithMany(a => a.BookingAddOns)
+                .WithMany(a => a.BookingAddOns) //many to many relation between booking and add on
                 .HasForeignKey(ba => ba.AddOnId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict); //cannot delete a add on that is tied to a booking
         }
     }
 }

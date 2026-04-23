@@ -18,7 +18,7 @@ namespace ConferenceBooking.Infrastructure
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var config = new ConfigurationBuilder()
+            var config = new ConfigurationBuilder() //connection string in appsettings.json
                 .AddJsonFile("appsettings.json")
                 .Build();
 
@@ -30,7 +30,7 @@ namespace ConferenceBooking.Infrastructure
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ConferenceBookingContext).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ConferenceBookingContext).Assembly); //applying all configurations
 
             modelBuilder.UseCollation("Finnish_Swedish_CI_AS");
         }

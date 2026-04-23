@@ -17,7 +17,7 @@ namespace ConferenceBooking.Application.Factories
                 ConferenceRoomId = conferenceRoomId,
                 StartTime = startTime,
                 EndTime = endTime,
-                TotalPrice = isFreeRoom ? 0 : hours * roomPrice,
+                TotalPrice = isFreeRoom ? 0 : hours * roomPrice, //if user is employee, then booking price is free
                 CreatedAt = DateTime.Now
             };
         }

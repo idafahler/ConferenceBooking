@@ -54,17 +54,17 @@ namespace ConferenceBooking.Application.Services
             await repo.AddAsync(booking);
 
             decimal addOnTotal = 0;
-            foreach(var id in addOnIds)
+            foreach(var id in addOnIds) //if there was any add ons added to booking, the relation between booking and add on is also created
             {
                 var addOn = await addOnRepo.GetByIdAsync(id);
                 if (addOn is null) continue;
 
                 var bookingAddOn = BookingFactory.CreateBookingAddOnRelation(booking.Id, addOn, room.Capacity);
                 await bookingAddOnRepo.AddAsync(bookingAddOn);
-                addOnTotal += bookingAddOn.TotalPrice;
+                addOnTotal += bookingAddOn.TotalPrice; //gets price for add on based on capacity of room
             }
 
-            if (addOnTotal > 0)
+            if (addOnTotal > 0) //updating bookings total price if there was any add ons added.
             {
                 booking.TotalPrice += addOnTotal;
                 await repo.UpdateAsync(booking);
@@ -101,9 +101,9 @@ namespace ConferenceBooking.Application.Services
             if (user is null || room is null)
                 return ServiceResult.Fail("Not found.");
 
-            var hours = (decimal)(booking.EndTime - booking.StartTime).TotalHours;
-            var roomPrice = user is Employee ? 0 : hours * room!.PricePerHour;
-            var addonTotal = await bookingAddOnRepo.CalculateTotalAddonPriceAsync(booking.Id);
+            var hours = (decimal)(booking.EndTime - booking.StartTime).TotalHours;//calculating price based on hours of booking
+            var roomPrice = user is Employee ? 0 : hours * room!.PricePerHour;//calculating cost, if user is employee, then cost == 0
+            var addonTotal = await bookingAddOnRepo.CalculateTotalAddonPriceAsync(booking.Id); //calls method to calculate addon price
             booking.TotalPrice = roomPrice + addonTotal;
 
             await repo.UpdateAsync(booking);
@@ -138,10 +138,11 @@ namespace ConferenceBooking.Application.Services
             if (room is null)
                 return ServiceResult.Fail("Room not found.");
 
-            var bookingAddon = BookingFactory.CreateBookingAddOnRelation(bookingId, addon, room.Capacity);
+            var bookingAddon = BookingFactory.CreateBookingAddOnRelation(bookingId, addon, room.Capacity); //calls factory to create row/relation between booking and add on
             await bookingAddOnRepo.AddAsync(bookingAddon);
 
-            booking.TotalPrice += bookingAddon.TotalPrice;
+            booking.TotalPrice += bookingAddon.TotalPrice; //updating total price for booking, adding add on cost
+
             await repo.UpdateAsync(booking);
 
             return ServiceResult.Ok($"{addon.Name} added to booking.");
@@ -158,6 +159,7 @@ namespace ConferenceBooking.Application.Services
                 return ServiceResult.Fail("Add on not found on booking.");
 
             booking.TotalPrice -= bookingAddon.TotalPrice;
+
             await bookingAddOnRepo.RemoveAsync(bookingAddon);
             await repo.UpdateAsync(booking);
 

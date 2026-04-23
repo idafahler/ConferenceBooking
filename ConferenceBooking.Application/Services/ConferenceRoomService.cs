@@ -23,7 +23,7 @@ namespace ConferenceBooking.Application.Services
         {
             var allRooms = await GetAllRoomsAsync();
 
-            var maxError = ValidationHelper.ValidateAmountInstances(allRooms, "conference rooms");
+            var maxError = ValidationHelper.ValidateAmountInstances(allRooms, "conference rooms"); //cannot be over 9 conference rooms
             if (maxError is not null)
                 return ServiceResult.Fail(maxError);
 
@@ -42,7 +42,7 @@ namespace ConferenceBooking.Application.Services
             if (room is null)
                 return ServiceResult.Fail("Conference room was not found.");
 
-            var allRooms = (await GetAllRoomsAsync())
+            var allRooms = (await GetAllRoomsAsync()) //gets all rooms except for this room
                 .Where(r => r.Id != room.Id)
                 .ToList();
 
@@ -62,7 +62,7 @@ namespace ConferenceBooking.Application.Services
                 return ServiceResult.Fail("Room was not found");
 
             var bookings = await bookingRepo.FindAsync(b => b.ConferenceRoomId == roomId);
-            if (bookings.Any())
+            if (bookings.Any())//if there is any bookings connected to conference room. conference room cannot be deleted
                 return ServiceResult.Fail($"{room.Number} cannot be deleted because it has existing bookings.");
 
             await roomRepo.RemoveAsync(room);
@@ -73,7 +73,7 @@ namespace ConferenceBooking.Application.Services
         {
             var errors = new Dictionary<string, string>();
 
-            var nameError = ValidationHelper.ValidateUniqueName(room.Number,"Name" ,allRooms, c => c.Number);
+            var nameError = ValidationHelper.ValidateUniqueName(room.Number,"Number" ,allRooms, c => c.Number);
             if (nameError is not null)
                 errors.Add("Number", nameError);
 

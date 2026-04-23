@@ -11,7 +11,7 @@ namespace ConferenceBooking.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            builder.HasDiscriminator<string>("Role")
+            builder.HasDiscriminator<string>("Role") //stores all user types in one table, distinguished by the role column
                 .HasValue<Admin>("Admin")
                 .HasValue<Employee>("Employee")
                 .HasValue<ExternalUser>("ExternalUser");

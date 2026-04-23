@@ -16,7 +16,6 @@ namespace ConferenceBooking.Presentation.Programs
 
             services.AddDbContext<ConferenceBookingContext>();
 
-
             services.AddScoped<IAddOnRepository, AddOnRepository>();
             services.AddScoped<IAddOnService, AddOnService>();
 

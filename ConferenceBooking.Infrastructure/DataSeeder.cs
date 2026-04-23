@@ -17,8 +17,8 @@ namespace ConferenceBooking.Infrastructure
             using var scope = scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ConferenceBookingContext>();
 
-            var existingUsers = await context.Users.CountAsync();
-            if (existingUsers > 0)
+            var existingUsers = await context.Users.CountAsync(); //gets all users
+            if (existingUsers > 0)//if there are none (first time running application) data is created in database
                 return;
 
             var admin = new Admin("admin", BCrypt.Net.BCrypt.HashPassword("Admin123!"), "Admin", "Adminsson", "admin@conference.com");
@@ -28,11 +28,12 @@ namespace ConferenceBooking.Infrastructure
             context.AddRange(admin, maria, lisa);
             await context.SaveChangesAsync();
 
-            var friday = GetNextWeekday(DayOfWeek.Friday);
-            var nextMonday = GetNextWeekday(DayOfWeek.Monday, nextWeek: true);
-            var nextTuesday = GetNextWeekday(DayOfWeek.Tuesday, nextWeek: true);
+            var friday = GetNextWeekday(DayOfWeek.Friday);// gets next upcoming weekday
+            var nextMonday = GetNextWeekday(DayOfWeek.Monday);
+            var nextTuesday = GetNextWeekday(DayOfWeek.Tuesday);
+            var nextThursday = GetNextWeekday(DayOfWeek.Thursday);
 
-            var room1 = await context.ConferenceRooms.FindAsync(1);
+            var room1 = await context.ConferenceRooms.FindAsync(1); //gets already created rooms. created at database creation, with hasdata (see configurations)
             var room2 = await context.ConferenceRooms.FindAsync(2);
 
             context.AddRange(
@@ -40,8 +41,8 @@ namespace ConferenceBooking.Infrastructure
                 {
                     User = maria,
                     ConferenceRoomId = 1,
-                    StartTime = friday.AddHours(13),
-                    EndTime = friday.AddHours(16),
+                    StartTime = friday.AddHours(13), //starts at 13:00
+                    EndTime = friday.AddHours(16), //ends at 16:00
                     TotalPrice = 0,
                     CreatedAt = DateTime.Now
                 },
@@ -62,12 +63,21 @@ namespace ConferenceBooking.Infrastructure
                     EndTime = nextTuesday.AddHours(14),
                     TotalPrice = 4 * room2!.PricePerHour,
                     CreatedAt = DateTime.Now
+                },
+                new Booking
+                {
+                    User = lisa,
+                    ConferenceRoomId = 4,
+                    StartTime = nextThursday.AddHours(8),
+                    EndTime = nextThursday.AddHours(12),
+                    TotalPrice = 4 * room2!.PricePerHour,
+                    CreatedAt = DateTime.Now
                 });
 
             await context.SaveChangesAsync();
         }
 
-        private static DateTime GetNextWeekday(DayOfWeek day, bool nextWeek = false) //Dynamic dates
+        private static DateTime GetNextWeekday(DayOfWeek day, bool nextWeek = false) //Allows for dynamic dates
         {
             var today = DateTime.Today;
             var diff = (int)day - (int)today.DayOfWeek;

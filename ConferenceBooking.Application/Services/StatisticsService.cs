@@ -14,17 +14,17 @@ namespace ConferenceBooking.Application.Services
         {
             var bookings = await bookingRepo.GetAllAsync();
             var rooms = await roomRepo.GetAllAsync();
-            var allBookingAddons = await bookingAddonRepo.GetAllWithAddonAsync();
+            var allBookingAddons = await bookingAddonRepo.GetAllBookingAddOnsRowsWithAddOns();
 
             var mostBookedGroup = bookings 
                 .GroupBy(b => b.ConferenceRoomId) //grouping bookings by room
                 .OrderByDescending(g => g.Count()) //counting amounts of bookings in group and sorting
                 .FirstOrDefault();
-            var mostBookedRoom = rooms.FirstOrDefault(r => r.Id == mostBookedGroup?.Key); //gets room
+            var mostBookedRoom = rooms.FirstOrDefault(r => r.Id == mostBookedGroup?.Key); //gets room with id
 
-            var mostPopular = allBookingAddons
-                .GroupBy(ba => ba.AddOnId)
-                .OrderByDescending(g => g.Count())
+            var mostPopularAddOnGroup = allBookingAddons
+                .GroupBy(ba => ba.AddOnId) //grouping add ons
+                .OrderByDescending(g => g.Count())  //counting and ordering in descending (highest count at the top)
                 .FirstOrDefault();
 
             var revenuePerRoom = bookings
@@ -57,8 +57,8 @@ namespace ConferenceBooking.Application.Services
             return new StatisticsResult(
                 mostBookedRoom?.Number ?? "-",
                 mostBookedGroup?.Count() ?? 0,
-                mostPopular?.First().AddOn?.Name ?? "-",
-                mostPopular?.Count() ?? 0,
+                mostPopularAddOnGroup?.First().AddOn?.Name ?? "-",
+                mostPopularAddOnGroup?.Count() ?? 0,
                 revenuePerRoom,
                 occupancyPerRoomThisWeek);
         }

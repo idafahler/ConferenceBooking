@@ -7,6 +7,7 @@ using System.Text;
 
 namespace ConferenceBooking.Infrastructure.Repositories
 {
+    //generic repository. which all other repositories inherits
     public class Repository<T>(ConferenceBookingContext context) : IRepository<T> where T : class
     {
         protected readonly DbSet<T> dbSet = context.Set<T>();
@@ -23,7 +24,7 @@ namespace ConferenceBooking.Infrastructure.Repositories
         public async Task AddAsync(T entity)
         {
             dbSet.Add(entity);
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(); //save changes is always performed when create, update or delete methods are called.
         }
 
         public async Task UpdateAsync(T entity)

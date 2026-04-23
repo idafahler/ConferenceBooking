@@ -47,7 +47,10 @@ namespace ConferenceBooking.Presentation.Shared
                             if (room is not null)
                             {
                                 var result = await SelectDayAndTime(weekStart, room, bookings); //returns tuple
-                                if (result is not null) return result;
+                                if (result is not null)
+                                {
+                                    return result;
+                                }
                             }
                         }
                         break;
@@ -182,15 +185,21 @@ namespace ConferenceBooking.Presentation.Shared
 
             if (selectedDate < DateTime.Today)
             {
-                SharedUIMethods.PrintMessageSleep("Cannot book a passed date.");
+                SharedUIMethods.PrintMessageSleep("Invalid date.");
+                return null;
+            }
+            if(GetDayStatus(selectedDate, room.Id, bookings) == DayStatus.FullyBooked)
+            {
+                SharedUIMethods.PrintMessageSleep("Room is fully booked this day.");
                 return null;
             }
 
+            Console.Clear();
             Console.WriteLine($"\nRoom: {room.Number} - {selectedDate:ddd dd/MM}:");
             var dayBookings = bookings
                 .Where(b => b.ConferenceRoomId == room.Id && b.StartTime.Date == selectedDate.Date)
                 .ToList(); //gets bookings for day
-
+            
             for (int hour = 8; hour < 17; hour++)
             {
                 var slotTime = selectedDate.AddHours(hour);

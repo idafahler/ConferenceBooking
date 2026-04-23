@@ -45,7 +45,7 @@ namespace ConferenceBooking.Application.Services
             var emailError = ValidationHelper.ValidateEmail(details.Email);
             if (emailError is not null)
                 errors.Add("Email", emailError);
-            else
+            else //if first validation does not go through, there is no need to check email again for other issues
             {
                 var uniqueEmail = ValidationHelper.ValidateUniqueName(details.Email, "Email", allUsers, u => u.Email);
                 if (uniqueEmail is not null)
@@ -149,14 +149,12 @@ namespace ConferenceBooking.Application.Services
                 return ServiceResult.Fail("User was not found.");
 
             var bookings = await bookingRepo.FindAsync(b => b.UserId == id);
-            if (bookings.Any())
+            if (bookings.Any()) //cannot delete user with bookings
                 return ServiceResult.Fail($"{user.FullName} cannot be deleted because user has bookings.");
 
             await userRepo.RemoveAsync(user);
             return ServiceResult.Ok($"{user.FullName} was deleted successfully.");
         }
-
-
 
         public async Task<User?> GetByUsernameAsync(string username)
         {
@@ -168,7 +166,7 @@ namespace ConferenceBooking.Application.Services
         {
             var user = await GetByUsernameAsync(username);
 
-            if (user is null || !Verify(password, user.PasswordHash))
+            if (user is null || !Verify(password, user.PasswordHash)) //verify is the method for comparing hashes, from bcrypt nuget
                 return ServiceResult<User>.Fail("Invalid credentials");
 
             return ServiceResult<User>.Ok(user, $"Welcome {user.FullName}");

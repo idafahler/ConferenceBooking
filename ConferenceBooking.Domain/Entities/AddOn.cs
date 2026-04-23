@@ -18,7 +18,7 @@ namespace ConferenceBooking.Domain.Entities
                     name = value;
                     return;
                 }
-                name = char.ToUpper(value.Trim()[0]) + value.Trim()[1..].ToLower();
+                name = char.ToUpper(value.Trim()[0]) + value.Trim()[1..].ToLower(); //trimming and setting first char to upper.
             }
         }
         public decimal PricePerPerson { get; set; }

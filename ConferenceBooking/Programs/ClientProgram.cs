@@ -17,7 +17,6 @@ namespace ConferenceBooking.Presentation.Programs
         {
             while (true)
             {
-                Console.Clear();
                 var key = Menu.Show($"Logged in", "Log out", "Book a conference room", "My profile");
 
                 switch (key.Key)
@@ -40,13 +39,14 @@ namespace ConferenceBooking.Presentation.Programs
         private async Task Booking(User user)
         {
             var bookingViewer = new BookingViewer(scopeFactory);
-            var selection = await bookingViewer.Show();
+            var selection = await bookingViewer.Show(); //running booking schedule
+            Console.Clear();
 
-            if (selection is null)
+            if (selection is null) //if no booking was made (returning null) return back to main menu
                 return;
 
             var (room, start, end) = selection.Value;
-            var selectedAddOns = await SelectAddOns();
+            var selectedAddOns = await SelectAddOnsAddToBooking(); //displaying choice of adding add ons to booking
 
             while (true)
             {
@@ -87,7 +87,7 @@ namespace ConferenceBooking.Presentation.Programs
             }
         }
 
-        private async Task<List<int>> SelectAddOns()
+        private async Task<List<int>> SelectAddOnsAddToBooking()
         {
             using var scope = scopeFactory.CreateScope();
             var addOnService = scope.ServiceProvider.GetRequiredService<IAddOnService>();
@@ -100,32 +100,30 @@ namespace ConferenceBooking.Presentation.Programs
                 SharedUIMethods.PrintMessagePause("No add ons available.");
                 return selectedAddOns;
             }
-            SharedUIMethods.ListAddOns(addOns);
 
-            Console.WriteLine("Would you like to add anything?");
-            Console.WriteLine("Press [ID] to add, [0] to finish.\n");
+            var options = addOns.Select(a => $"{a.Name.PadRight(15)} {a.PricePerPerson, 10:C}/person");
             while (true)
             {
-                var key = Console.ReadKey(true);
+                var key = Menu.Show("Select add on", "Back", options.ToArray());
+                if (selectedAddOns.Count == addOns.Count) //if all addon options have been added return
+                    return selectedAddOns;
+                if (key.Key == ConsoleKey.D0) // if key 0 is pressed then break
+                    return selectedAddOns;
 
-                if (key.KeyChar == '0') break;
+                var index = key.Key - ConsoleKey.D1; //translates a key to an index/int. If ConsoleKey.D3 is pressed, then subtracting ConsolKey.D1 means index 2(id in list)
 
-                if (!char.IsDigit(key.KeyChar))
-                    continue;
-
-                int id = key.KeyChar - '0';
-
-                var addOn = await addOnService.GetAddOnByIdAsync(id);
-
-                if (addOn is null)
+                if (index >= 0 && index < addOns.Count)
                 {
-                    SharedUIMethods.PrintMessageSleep("Add on not found.");
-                    continue;
+                    var id = addOns[index].Id;
+                    if (selectedAddOns.Contains(id))
+                    {
+                        SharedUIMethods.PrintMessageSleep("Already added.");
+                        continue;
+                    }
+                    selectedAddOns.Add(id);
+                    SharedUIMethods.PrintMessagePause($"Added {addOns[index].Name}");
                 }
-                selectedAddOns.Add(id);
-                Console.WriteLine($"Added: {addOn.Name}");
             }
-            return selectedAddOns;
         }
 
         private async Task ManageOwnClientAccount(User user)
@@ -197,7 +195,10 @@ namespace ConferenceBooking.Presentation.Programs
                 SharedUIMethods.ListBookingsCompact(upcoming, "Upcoming bookings");
 
                 Console.Write("\nEnter booking ID to manage: ");
-                if (!int.TryParse(Console.ReadLine(), out var bookingId) || bookingId == 0)
+                string input = Console.ReadLine();
+                if (input == "0" || input is null)
+                    return;
+                if (!int.TryParse(input, out var bookingId))
                 {
                     SharedUIMethods.PrintMessagePause("Invalid input.");
                     continue;
@@ -228,10 +229,6 @@ namespace ConferenceBooking.Presentation.Programs
                     SharedUIMethods.PrintMessagePause("Booking not found.");
                     return false;
                 }
-
-                var addonInfo = booking.BookingAddOns.Count != 0
-                    ? string.Join(", ", booking.BookingAddOns.Select(ba => $"{ba.AddOn.Name}"))
-                    : "None";
 
                 var key = Menu.Show($"Booking {booking.Id}", "Back",
                     $"Change time {booking.StartTime:HH}-{booking.EndTime:HH}",
@@ -316,7 +313,7 @@ namespace ConferenceBooking.Presentation.Programs
 
             var allAddons = await addonService.GetAllAddOnsAsync();
             var available = allAddons
-                .Where(a => !booking.BookingAddOns.Any(ba => ba.AddOnId == a.Id))
+                .Where(a => !booking.BookingAddOns.Any(ba => ba.AddOnId == a.Id)) //gets all add ons not already in booking
                 .ToList();
 
             if (available.Count == 0)

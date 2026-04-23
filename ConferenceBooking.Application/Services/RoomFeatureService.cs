@@ -44,7 +44,7 @@ namespace ConferenceBooking.Application.Services
             if (existing is null)
                 return ServiceResult.Fail("Room feature was not found.");
 
-            var allFeatures = (await GetAllFeaturesAsync())
+            var allFeatures = (await GetAllFeaturesAsync()) //gets all features except this feature
                 .Where(f => f.Id != feature.Id)
                 .ToList();
 
@@ -68,9 +68,9 @@ namespace ConferenceBooking.Application.Services
                 return ServiceResult.Fail("Room feature was not found.");
 
             var rooms = await roomRepo.GetAllRoomsWithFeaturesAsync();
-            var hasLinks = rooms.Any(r => r.RoomFeatures.Any(f => f.Id == id));
+            var hasLinks = rooms.Any(r => r.RoomFeatures.Any(f => f.Id == id)); 
 
-            if (hasLinks)
+            if (hasLinks)//Cannot delete a feature that is assigned to a conference room
                 return ServiceResult.Fail($"{feature.Name} cannot be deleted because it is assigned to existing rooms.");
 
             await featureRepo.RemoveAsync(feature);

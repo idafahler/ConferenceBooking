@@ -16,7 +16,7 @@ namespace ConferenceBooking.Infrastructure.Configurations
                 .HasColumnType(SqlDbType.Money.ToString());
 
             builder.Property(b => b.StartTime)
-                .HasColumnType("datetime2(0)");
+                .HasColumnType("datetime2(0)"); // datetime2(0), no decimals for seconds is stored
 
             builder.Property(b => b.EndTime)
                 .HasColumnType("datetime2(0)");
@@ -30,14 +30,14 @@ namespace ConferenceBooking.Infrastructure.Configurations
             builder.HasOne(b => b.User)
                 .WithMany(u => u.Bookings)
                 .HasForeignKey(b => b.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict); //cannot delete user with booking relation
 
-            builder.HasOne(b => b.ConferenceRoom)
+            builder.HasOne(b => b.ConferenceRoom) //conference room with booking cannot be deleted
                 .WithMany(r => r.Bookings)
                 .HasForeignKey(b => b.ConferenceRoomId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasMany(b => b.BookingAddOns)
+            builder.HasMany(b => b.BookingAddOns) //if a booking is deleted all its data in bookingaddon table is also removed.
                 .WithOne(ba => ba.Booking)
                 .HasForeignKey(ba => ba.BookingId)
                 .OnDelete(DeleteBehavior.Cascade);

@@ -27,10 +27,10 @@ namespace ConferenceBooking.Infrastructure.Configurations
                 new ConferenceRoom { Id = 4, Number = "104", Capacity = 30, PricePerHour = 3000 }
                 );
 
-            builder.HasMany(f => f.RoomFeatures)
+            builder.HasMany(f => f.RoomFeatures) //many to many relation between conference room and features
                 .WithMany(r => r.ConferenceRooms)
-                .UsingEntity<Dictionary<string, object>>("ConferenceRoomFeature",
-                f => f.HasOne<RoomFeature>().WithMany().HasForeignKey("RoomFeatureId").OnDelete(DeleteBehavior.Cascade),
+                .UsingEntity<Dictionary<string, object>>("ConferenceRoomFeature", //conferenceroomfeature is an ef automated entity. does not exist in code.
+                f => f.HasOne<RoomFeature>().WithMany().HasForeignKey("RoomFeatureId").OnDelete(DeleteBehavior.Cascade), //if a feature is deleted its rows in junction table is also deleted.
                 c => c.HasOne<ConferenceRoom>().WithMany().HasForeignKey("ConferenceRoomId").OnDelete(DeleteBehavior.Cascade),
                 j =>
                 {

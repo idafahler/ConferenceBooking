@@ -10,7 +10,7 @@ using System.Text;
 
 namespace ConferenceBooking.Presentation.Programs
 {
-    internal class AdminProgram(IServiceScopeFactory scopeFactory)
+    internal class AdminProgram(IServiceScopeFactory scopeFactory) //called upon to create a new scope
     {
         private readonly SharedOperations _shared = new(scopeFactory);
         internal async Task Run(User user)
@@ -66,7 +66,7 @@ namespace ConferenceBooking.Presentation.Programs
                         if (deleted)
                         {
                             SharedUIMethods.PrintMessagePause("Your account has been deleted.");
-                            await new LogInProgram(scopeFactory).Run();
+                            await new LogInProgram(scopeFactory).Run(); //if account is deleted, user is sent back to start of application
                         }
                         break;
                     case ConsoleKey.D0:
@@ -105,8 +105,8 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Clear();
-                using var scope = scopeFactory.CreateScope();
-                var service = scope.ServiceProvider.GetRequiredService<IAddOnService>();
+                using var scope = scopeFactory.CreateScope(); //creating a scope (new context) lives inside of this scope (inside of loop) new one is created each time
+                var service = scope.ServiceProvider.GetRequiredService<IAddOnService>(); //asks for required service
                 var addOns = await service.GetAllAddOnsAsync();
                 if (addOns.Count == 0)
                     return;
@@ -114,7 +114,7 @@ namespace ConferenceBooking.Presentation.Programs
                 var options = addOns.Select(a => $"{a.Name,-20} {a.PricePerPerson,-10:C}/person");
 
                 if (addOns.Count < 9)
-                    options = options.Append("Create new add on");
+                    options = options.Append("Create new add on"); //if there are less than 9 (maximum) addons, a new one can be created so option is shown
 
                 var key = Menu.Show("Manage Add Ons", "Back", options.ToArray());
 
@@ -172,8 +172,9 @@ namespace ConferenceBooking.Presentation.Programs
             do
             {
                 Console.Write("Enter new name: ");
-                var input = Console.ReadLine()!;
-                if (input == "0") return;
+                var input = Console.ReadLine();
+                if (input == "0" || input is null) 
+                    return;
 
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IAddOnService>();
@@ -184,7 +185,7 @@ namespace ConferenceBooking.Presentation.Programs
                     return;
                 }
 
-                addOn!.Name = input;
+                addOn.Name = input;
                 result = await service.UpdateAddOnAsync(addOn);
 
                 if (!result.Success)
@@ -202,7 +203,7 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Write("Enter new price: ");
-                if (!decimal.TryParse(Console.ReadLine(), out var price) || price >= 99999)
+                if (!decimal.TryParse(Console.ReadLine(), out var price) || price >= 99999) //price cannot be too high, avoiding exception
                 {
                     Console.WriteLine("Invalid price.");
                     continue;
@@ -218,7 +219,7 @@ namespace ConferenceBooking.Presentation.Programs
                     return;
                 }
 
-                addOn!.PricePerPerson = price;
+                addOn.PricePerPerson = price;
                 var result = await service.UpdateAddOnAsync(addOn);
 
                 if (result.Success)
@@ -340,7 +341,7 @@ namespace ConferenceBooking.Presentation.Programs
                 switch (key.Key)
                 {
                     case ConsoleKey.D1:
-                        await UpdateRoomProperty(roomId, "number", (r, value) => r.Number = value);
+                        await UpdateRoomProperty(roomId, "number", (r, value) => r.Number = value); //sends lambda which says what is to be updated
                         break;
                     case ConsoleKey.D2:
                         await UpdateRoomNumericProperty(roomId, "capacity", (r, value) => r.Capacity = (int)value);
@@ -368,8 +369,8 @@ namespace ConferenceBooking.Presentation.Programs
             do
             {
                 Console.Write($"Enter new {property}: ");
-                var input = Console.ReadLine()!;
-                if (input == "0") return;
+                var input = Console.ReadLine();
+                if (input == "0" || input is null) return;
 
                 using var scope = scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IConferenceRoomService>();
@@ -380,7 +381,7 @@ namespace ConferenceBooking.Presentation.Programs
                     return;
                 }
 
-                update(room!, input);
+                update(room, input); //calls upon delegate method "update" and sets given property to input value
                 result = await service.UpdateRoomAsync(room);
 
                 if (!result.Success)
@@ -419,7 +420,7 @@ namespace ConferenceBooking.Presentation.Programs
                     return;
                 }
 
-                update(room!, value);
+                update(room, value);
                 var result = await service.UpdateRoomAsync(room);
 
                 if (result.Success)
@@ -550,15 +551,15 @@ namespace ConferenceBooking.Presentation.Programs
                 switch (key.Key)
                 {
                     case ConsoleKey.D1:
-                        var available = allFeatures.Where(f => !currentFeatures.Any(cf => cf.Id == f.Id)).ToList();
+                        var available = allFeatures.Where(f => !currentFeatures.Any(cf => cf.Id == f.Id)).ToList(); //gets features that are not already added
                         if (available.Count == 0)
                         {
                             SharedUIMethods.PrintMessagePause("No more features to add.");
                             break;
                         }
 
-                        var addOptions = available.Select(f => f.Name).ToArray();
-                        var addKey = Menu.Show("Add feature", "Cancel", addOptions);
+                        var addOptions = available.Select(f => f.Name).ToArray(); //gets name of available features and displaying dynamic list, updating which features can be added or not
+                        var addKey = Menu.Show("Add feature", "Cancel", addOptions); 
 
                         if (addKey.Key == ConsoleKey.D0) break;
 
@@ -691,7 +692,7 @@ namespace ConferenceBooking.Presentation.Programs
                     return;
                 }
 
-                feature!.Name = input;
+                feature.Name = input;
                 result = await service.UpdateFeatureAsync(feature);
 
                 if (!result.Success)
@@ -735,22 +736,22 @@ namespace ConferenceBooking.Presentation.Programs
         {
             using var scope = scopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<IStatisticsService>();
-            var stats = await service.GetStatisticsAsync();
+            var statistics = await service.GetStatisticsAsync(); //gets Statistics data
 
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("Statistics\n");
             Console.ResetColor();
 
-            Console.WriteLine($"Most booked room:    {stats.MostBookedRoom} ({stats.MostBookedRoomCount} bookings)");
-            Console.WriteLine($"Most popular add-on: {stats.MostPopularAddon} ({stats.MostPopularAddonCount} bookings)");
+            Console.WriteLine($"Most booked room:    {statistics.MostBookedRoom} ({statistics.MostBookedRoomCount} bookings)");
+            Console.WriteLine($"Most popular add-on: {statistics.MostPopularAddon} ({statistics.MostPopularAddonCount} bookings)");
 
             Console.WriteLine($"\n{"Room",-10} {"Revenue",12} {"Occupancy for week",20}");
             Console.WriteLine($"{new string('-', 45)}");
 
-            foreach (var room in stats.RevenuePerRoom)
+            foreach (var room in statistics.RevenuePerRoom)
             {
-                var occupancy = stats.OccupancyPerRoom.FirstOrDefault(o => o.RoomNumber == room.RoomNumber);
+                var occupancy = statistics.OccupancyPerRoom.FirstOrDefault(o => o.RoomNumber == room.RoomNumber);
                 Console.WriteLine($"{room.RoomNumber,-10} {room.Revenue,12:C0} {occupancy?.OccupancyPercent,18:F1} %");
             }
 

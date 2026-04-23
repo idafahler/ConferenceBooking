@@ -66,7 +66,7 @@ namespace ConferenceBooking.Domain.Entities
         }
         public List<Booking> Bookings { get; set; } = [];
 
-        public string FullName => $"{FirstName} {LastName}";
+        public string FullName => $"{FirstName} {LastName}"; //computed property for fullname. much easier to display name
 
         protected User(string username, string passwordHash, string firstName, string lastName, string email)
         {
