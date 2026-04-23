@@ -65,8 +65,8 @@ namespace ConferenceBooking.Presentation.Programs
                         var deleted = await _shared.DeleteUser(user.Id);
                         if (deleted)
                         {
-                            SharedUIMethods.PrintMessagePause("Your account has been deleted. Exiting program.");
-                            Environment.Exit(0);
+                            SharedUIMethods.PrintMessagePause("Your account has been deleted.");
+                            await new LogInProgram(scopeFactory).Run();
                         }
                         break;
                     case ConsoleKey.D0:
@@ -202,7 +202,7 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Write("Enter new price: ");
-                if (!decimal.TryParse(Console.ReadLine(), out var price))
+                if (!decimal.TryParse(Console.ReadLine(), out var price) || price >= 99999)
                 {
                     Console.WriteLine("Invalid price.");
                     continue;
@@ -241,7 +241,7 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Write("Price per person: ");
-                if (decimal.TryParse(Console.ReadLine(), out price))
+                if (decimal.TryParse(Console.ReadLine(), out price) && price <= 99999)
                     break;
                 Console.WriteLine("Invalid price.");
             }
@@ -404,7 +404,7 @@ namespace ConferenceBooking.Presentation.Programs
                     continue;
                 }
                 if (value == 0) return;
-                if (value > int.MaxValue)
+                if (value > 99999)
                 {
                     Console.WriteLine("Value is too large.");
                     continue;
@@ -442,7 +442,7 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Write("Capacity: ");
-                if (int.TryParse(Console.ReadLine(), out capacity))
+                if (int.TryParse(Console.ReadLine(), out capacity) && capacity <= 9999)
                     break;
                 Console.WriteLine("Invalid capacity.");
             }
@@ -451,7 +451,7 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Write("Price per hour: ");
-                if (decimal.TryParse(Console.ReadLine(), out price))
+                if (decimal.TryParse(Console.ReadLine(), out price) && price <= 99999)
                     break;
                 Console.WriteLine("Invalid price.");
             }
@@ -481,7 +481,7 @@ namespace ConferenceBooking.Presentation.Programs
                                 while (true)
                                 {
                                     Console.Write("New capacity: ");
-                                    if (int.TryParse(Console.ReadLine(), out var c))
+                                    if (int.TryParse(Console.ReadLine(), out var c) && c <= 9999)
                                     {
                                         room.Capacity = c;
                                         break;
@@ -493,7 +493,7 @@ namespace ConferenceBooking.Presentation.Programs
                                 while (true)
                                 {
                                     Console.Write("New price: ");
-                                    if (decimal.TryParse(Console.ReadLine(), out var p))
+                                    if (decimal.TryParse(Console.ReadLine(), out var p) && p <= 99999)
                                     {
                                         room.PricePerHour = p;
                                         break;

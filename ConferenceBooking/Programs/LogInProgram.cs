@@ -39,8 +39,7 @@ namespace ConferenceBooking.Presentation.Programs
 
                     case ConsoleKey.D0:
                         SharedUIMethods.PrintMessagePause("Exiting program.");
-                        Environment.Exit(0);
-                        break;
+                        return;
 
                     default:
                         SharedUIMethods.PrintMessageSleep("Invalid choice.");

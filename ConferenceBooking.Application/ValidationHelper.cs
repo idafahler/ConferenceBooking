@@ -99,9 +99,6 @@ namespace ConferenceBooking.Application
             if (price == 0)
                 return "Price can't be zero.";
 
-            if (price > decimal.MaxValue)
-                return "Value is too large.";
-
             return null;
         }
 
@@ -141,9 +138,6 @@ namespace ConferenceBooking.Application
 
             if (capacity == 0)
                 return "Capacity cannot be zero.";
-
-            if (capacity > int.MaxValue)
-                return "Value is too large.";
 
             return null;
         }

@@ -3,6 +3,7 @@ using ConferenceBooking.Application.RepositoryInterfaces;
 using ConferenceBooking.Application.ServiceInterfaces;
 using ConferenceBooking.Domain.Entities;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
@@ -37,12 +38,13 @@ namespace ConferenceBooking.Application.Services
             if (timeError is not null)
                 errors.Add("Time", timeError);
 
-            var allBookings = await GetAllBookingsAsync();
+            var allBookingsSameDay = await FindBookingsAsync(b => b.StartTime.Date == start.Date);
+            List<Booking> allBookingsSameDayList = allBookingsSameDay.ToList();
 
-            var conflictbooking = ValidationHelper.ValidateNoBookingConflict
-                (start, end, roomId, allBookings);
-            if (conflictbooking is not null)
-                errors.Add("Conflict", conflictbooking);
+            var conflictBooking = ValidationHelper.ValidateNoBookingConflict
+                (start, end, roomId, allBookingsSameDayList);
+            if (conflictBooking is not null)
+                errors.Add("Conflict", conflictBooking);
 
             if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
@@ -83,9 +85,11 @@ namespace ConferenceBooking.Application.Services
             if (timeError is not null)
                 errors.Add("Time", timeError);
 
-            var allBookings = await GetAllBookingsAsync();
+            var allBookingsSameDay = await FindBookingsAsync(b => b.StartTime.Date == booking.StartTime.Date);
+            List<Booking> allBookingsSameDayList = allBookingsSameDay.ToList();
+
             var conflictError = ValidationHelper.ValidateNoBookingConflict(
-                booking.StartTime, booking.EndTime, booking.ConferenceRoomId, allBookings, booking.Id);
+                booking.StartTime, booking.EndTime, booking.ConferenceRoomId, allBookingsSameDayList, booking.Id);
             if (conflictError is not null)
                 errors.Add("Conflict", conflictError);
 
@@ -94,6 +98,8 @@ namespace ConferenceBooking.Application.Services
 
             var room = await roomRepo.GetByIdAsync(booking.ConferenceRoomId);
             var user = await userRepo.GetByIdAsync(booking.UserId!.Value);
+            if (user is null || room is null)
+                return ServiceResult.Fail("Not found.");
 
             var hours = (decimal)(booking.EndTime - booking.StartTime).TotalHours;
             var roomPrice = user is Employee ? 0 : hours * room!.PricePerHour;

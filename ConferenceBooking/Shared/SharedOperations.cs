@@ -89,7 +89,7 @@ namespace ConferenceBooking.Presentation.Shared
             SharedUIMethods.PrintResultMessage(result);
         }
 
-        internal async Task<UserDetails> GetUserDetails(UserType role)
+        internal static async Task<UserDetails> GetUserDetails(UserType role)
         {
             Console.Write("Username: ");
             var username = Console.ReadLine()!;

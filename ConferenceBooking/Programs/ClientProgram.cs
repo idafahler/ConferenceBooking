@@ -153,8 +153,8 @@ namespace ConferenceBooking.Presentation.Programs
                         var deleted = await _shared.DeleteUser(user.Id);
                         if (deleted)
                         {
-                            SharedUIMethods.PrintMessagePause("Your account has been deleted. Exiting program.");
-                            Environment.Exit(0);
+                            SharedUIMethods.PrintMessagePause("Your account has been deleted.");
+                            await new LogInProgram(scopeFactory).Run();
                         }
                         break;
                     case ConsoleKey.D0:

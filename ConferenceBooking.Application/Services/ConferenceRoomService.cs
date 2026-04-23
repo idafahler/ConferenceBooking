@@ -46,12 +46,12 @@ namespace ConferenceBooking.Application.Services
                 .Where(r => r.Id != room.Id)
                 .ToList();
 
-            var errors = CheckProperties(room, allRooms);
+            var errors = CheckProperties(roomIn, allRooms);
 
             if (errors.Count != 0)
                 return ServiceResult.Fail("Validation failed.", errors);
 
-            await roomRepo.UpdateAsync(room);
+            await roomRepo.UpdateAsync(roomIn);
             return ServiceResult.Ok("Conference room was updated successfully");
         }
 
