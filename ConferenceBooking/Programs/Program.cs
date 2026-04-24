@@ -12,12 +12,13 @@ namespace ConferenceBooking.Presentation.Programs
     {
         static async Task Main(string[] args)
         {
-            var services = new ServiceCollection();
+            //läs mer om detta i dokumentationen
+            var services = new ServiceCollection(); //initialising servicecollection which dependencies (services and their interfaces) are added to
 
-            services.AddDbContext<ConferenceBookingContext>();
+            services.AddDbContext<ConferenceBookingContext>(); //registering DbContext in servicecollection. provides services with a database connection
 
-            services.AddScoped<IAddOnRepository, AddOnRepository>();
-            services.AddScoped<IAddOnService, AddOnService>();
+            services.AddScoped<IAddOnRepository, AddOnRepository>(); //registering all services and their interfaces.
+            services.AddScoped<IAddOnService, AddOnService>(); //they are registered together and the code in the presentation layer is dependent on the abstraction of the service not the actual implementation
 
             services.AddScoped<IBookingRepository, BookingRepository>();
             services.AddScoped<IBookingService, BookingService>();
@@ -35,12 +36,12 @@ namespace ConferenceBooking.Presentation.Programs
 
             services.AddScoped<IStatisticsService, StatisticsService>();
 
-            var provider = services.BuildServiceProvider();
-            var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            var provider = services.BuildServiceProvider(); //with buildserviceprovider the service container is created
+            var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>(); //initializing scope factory to inject into classes
 
-            await DataSeeder.SeedAsync(scopeFactory);
+            await DataSeeder.SeedAsync(scopeFactory); //calling data seeder
 
-            await new LogInProgram(scopeFactory).Run();
+            await new LogInProgram(scopeFactory).Run(); //injecting scopefactory into LogInProgram constructor
         }
     }
 }

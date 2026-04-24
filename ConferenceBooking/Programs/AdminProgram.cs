@@ -105,9 +105,9 @@ namespace ConferenceBooking.Presentation.Programs
             while (true)
             {
                 Console.Clear();
-                using var scope = scopeFactory.CreateScope(); //creating a scope (new context) lives inside of this scope (inside of loop) new one is created each time
-                var service = scope.ServiceProvider.GetRequiredService<IAddOnService>(); //asks for required service
-                var addOns = await service.GetAllAddOnsAsync();
+                using var scope = scopeFactory.CreateScope(); //creating a scope. lives inside of this scope (inside of loop) new one is created each time
+                var service = scope.ServiceProvider.GetRequiredService<IAddOnService>(); //asks for service interface. code depends on interface not actual implementation
+                var addOns = await service.GetAllAddOnsAsync(); //calls method in interface, actual implementation in service executed and returns
                 if (addOns.Count == 0)
                     return;
 

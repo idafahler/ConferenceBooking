@@ -11,7 +11,7 @@ using System.Text;
 
 namespace ConferenceBooking.Presentation.Programs
 {
-    internal class LogInProgram(IServiceScopeFactory scopeFactory)
+    internal class LogInProgram(IServiceScopeFactory scopeFactory) //takes a servicescopefactory through a primary constructor
     {
         private readonly SharedOperations _shared = new(scopeFactory);
         internal async Task Run()
