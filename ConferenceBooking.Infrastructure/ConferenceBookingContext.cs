@@ -32,7 +32,7 @@ namespace ConferenceBooking.Infrastructure
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ConferenceBookingContext).Assembly); //applying all configurations
 
-            modelBuilder.UseCollation("Finnish_Swedish_CI_AS");
+            modelBuilder.UseCollation("Finnish_Swedish_CI_AS"); //storing and handling swedish characters correctly. CI= Case insensitive, AS = Accent sensitive
         }
     }
 }
